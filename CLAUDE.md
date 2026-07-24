@@ -63,6 +63,7 @@ public/
 | `CaptionedVideo` | Видео-фон + караоке-субтитры по таймингам |
 | `PixiScene` | Мультик/частицы/генеративка (PixiJS, canvas) |
 | `CodeReveal` | Кодинг-ролики: печать кода в окне редактора |
+| `ReactTodoLesson` | Обучающий кодинг-ролик «за 60 сек»: печать кода + живое превью работающего приложения + караоке-комментарии внизу |
 | `DataChart` | Данные/топы: анимированные бары (SVG) |
 | `MatrixRain` | Премиум 3D: цифровой дождь Матрицы, пролёт камеры сквозь глифы (`/remotion-3d`) |
 
@@ -92,10 +93,16 @@ npm run lint                                  # eslint + tsc
 `public/assets/manifest.json`. При публикации указывай атрибуцию (особенно Unsplash).
 В композиции: `staticFile("assets/<файл>")`.
 
-## Озвучка/музыка (по запросу)
-TTS и авто-субтитры (Whisper) пока не подключены. Порядок: текст → TTS → файл в
-`public/` → `<Audio>`; для авто-таймингов субтитров — `@remotion/install-whisper-cpp`
-(`transcribe` → `toCaptions` → `captions.json`) → рецепт `CaptionedVideo`.
+## Озвучка/музыка
+**Музыку предлагай при каждой генерации** — это обязательный вопрос пайплайна
+`shorts-director` (шаг 1): без музыки / свой трек / готовый `public/music.mp3` /
+подобрать бесплатный (YouTube-safe). Если да — `<Audio src={staticFile(...)} volume={...} />`
+с fade-in/out и громкостью ~0.3–0.4.
+
+Озвучка (TTS) и авто-субтитры (Whisper) пока не подключены — по запросу. Порядок:
+текст → TTS → файл в `public/` → `<Audio>`; для авто-таймингов субтитров —
+`@remotion/install-whisper-cpp` (`transcribe` → `toCaptions` → `captions.json`) →
+рецепт `CaptionedVideo`.
 
 ## Лицензия
 Remotion бесплатен для команд до 3 человек; от 4 — платная Company License

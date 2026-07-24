@@ -8,6 +8,7 @@ import { PixiScene } from "./compositions/PixiScene/PixiScene";
 import { CodeReveal } from "./compositions/CodeReveal/CodeReveal";
 import { DataChart } from "./compositions/DataChart/DataChart";
 import { MatrixRain } from "./compositions/MatrixRain/MatrixRain";
+import { ReactTodoLesson } from "./compositions/ReactTodoLesson/ReactTodoLesson";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -101,6 +102,22 @@ const opacity = interpolate(
             { label: "Shell", value: 11 },
           ],
           accent: "#38bdf8",
+        }}
+      />
+
+      {/* Обучающий кодинг-ролик: пишем Todo на React за 60 сек + караоке-комментарии. */}
+      <Composition
+        id="ReactTodoLesson"
+        component={ReactTodoLesson}
+        durationInFrames={seconds(60)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          filename: "App.jsx",
+          accent: "#38bdf8",
+          // Трек лежит в public/music.mp3 (lo-fi из YouTube Audio Library).
+          musicSrc: "music.mp3" as string | null,
         }}
       />
 
