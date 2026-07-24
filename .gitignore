@@ -1,0 +1,18 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Скачанные ассеты и рендеры не коммитим (кроме тех, что кладёте в src/ вручную).
+out
+public/assets
+
+# Локальные бинарники whisper.cpp, если добавите авто-субтитры позже.
+whisper.cpp
+
+# Официальные Remotion Skills ставятся командой `npx skills add remotion-dev/skills`.
+# Их содержимое и симлинки не коммитим (кросс-платформенные симлинки ломаются),
+# версии зафиксированы в skills-lock.json. Свой скилл shorts-director коммитим.
+.agents/
+.claude/skills/mediabunny
+.claude/skills/remotion-*

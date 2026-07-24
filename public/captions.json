@@ -1,0 +1,12 @@
+[
+  { "text": "Remotion", "startMs": 0, "endMs": 560, "timestampMs": 280, "confidence": 1 },
+  { "text": " превращает", "startMs": 560, "endMs": 1200, "timestampMs": 880, "confidence": 1 },
+  { "text": " код", "startMs": 1200, "endMs": 1520, "timestampMs": 1360, "confidence": 1 },
+  { "text": " на", "startMs": 1520, "endMs": 1680, "timestampMs": 1600, "confidence": 1 },
+  { "text": " React", "startMs": 1680, "endMs": 2200, "timestampMs": 1940, "confidence": 1 },
+  { "text": " в", "startMs": 2200, "endMs": 2360, "timestampMs": 2280, "confidence": 1 },
+  { "text": " готовое", "startMs": 2360, "endMs": 2900, "timestampMs": 2630, "confidence": 1 },
+  { "text": " видео", "startMs": 2900, "endMs": 3400, "timestampMs": 3150, "confidence": 1 },
+  { "text": " без", "startMs": 3400, "endMs": 3720, "timestampMs": 3560, "confidence": 1 },
+  { "text": " монтажа", "startMs": 3720, "endMs": 4400, "timestampMs": 4060, "confidence": 1 }
+]
