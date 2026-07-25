@@ -11,6 +11,7 @@ import { MatrixRain } from "./compositions/MatrixRain/MatrixRain";
 import { ReactTodoLesson } from "./compositions/ReactTodoLesson/ReactTodoLesson";
 import { PhysicsScene } from "./compositions/PhysicsScene/PhysicsScene";
 import { ShellEject } from "./compositions/ShellEject/ShellEject";
+import { TunnelRush } from "./compositions/TunnelRush/TunnelRush";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -160,6 +161,31 @@ const opacity = interpolate(
         width={FORMAT.width}
         height={FORMAT.height}
         defaultProps={{}}
+      />
+
+      {/* Полёт по трубе на полётной физике: 60fps, 45 c, вертикаль.
+          Телеметрию полётного плана можно проверить без рендера: npm run flight */}
+      <Composition
+        id="TunnelRush"
+        component={TunnelRush}
+        durationInFrames={2700}
+        fps={60}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          hook: "6.5 G in 45 seconds",
+          taunt: "Feel that in your chest",
+          outroTitle: "You made it",
+          outroSub: "Barrel roll · 5G brake · full loop · Mach 1.3",
+          neonA: "#22d3ee",
+          neonB: "#a855f7",
+          // Тёплый красно-янтарный вместо чистого красного: насыщенный красный
+          // на весь кадр — главный раздражитель для светочувствительных.
+          danger: "#ff6a3d",
+          // Kevin MacLeod «Space Fighter Loop» (CC BY 4.0) — см. public/MUSIC-CREDITS.md.
+          // null = тихий рендер.
+          musicSrc: "tunnel-music.mp3" as string | null,
+        }}
       />
     </>
   );

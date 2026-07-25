@@ -12,6 +12,7 @@
     "compositions": "remotion compositions",
     "assets": "tsx scripts/fetch-assets.ts",
     "bake": "tsx scripts/bake-physics.ts",
+    "flight": "tsx scripts/check-flight.ts",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
   },
