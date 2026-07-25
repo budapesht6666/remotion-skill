@@ -11,6 +11,7 @@
     "render": "remotion render",
     "compositions": "remotion compositions",
     "assets": "tsx scripts/fetch-assets.ts",
+    "bake": "tsx scripts/bake-physics.ts",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
   },
@@ -22,6 +23,7 @@
     "@remotion/tailwind-v4": "4.0.498",
     "@remotion/three": "^4.0.498",
     "@types/three": "^0.185.1",
+    "cannon-es": "^0.20.0",
     "pixi.js": "^8.6.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

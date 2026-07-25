@@ -48,10 +48,12 @@ src/
   compositions/<Имя>/      рецепты (см. таблицу ниже)
 scripts/
   fetch-assets.ts          CLI скачивания стока → public/assets
+  bake-physics.ts          CLI запекания cannon-es-симуляций → sim.json (сцены poc, shells)
   lib/stock.ts             провайдеры Unsplash/Pexels/Pixabay
 public/
   captions.json            пример субтитров (формат Caption[])
   assets/                  скачанный сток (в .gitignore)
+  models/                  GLTF-модели (пистолет Quaternius CC0) + CREDITS.md
 .claude/skills/shorts-director/SKILL.md   скилл-оркестратор
 ```
 
@@ -66,6 +68,8 @@ public/
 | `ReactTodoLesson` | Обучающий кодинг-ролик «за 60 сек»: печать кода + живое превью работающего приложения + караоке-комментарии внизу |
 | `DataChart` | Данные/топы: анимированные бары (SVG) |
 | `MatrixRain` | Премиум 3D: цифровой дождь Матрицы, пролёт камеры сквозь глифы (`/remotion-3d`) |
+| `PhysicsScene` | Физика + 3D-облёт: симуляция cannon-es запекается скриптом в `sim.json`, рендер читает позы по кадру (PoC-пайплайн под гильзу/осколки) |
+| `ShellEject` | Герой-сцена «выстрел + вылет гильз»: латунные гильзы cannon-es (fireFrame + импульс), **реальная GLTF-модель пистолета** (Quaternius 9mm, CC0) + IBL (RoomEnvironment) + ACES + тени + облёт камеры (вспышка/дым — Тир 2) |
 
 ## Команды
 
@@ -75,6 +79,8 @@ npm run compositions                          # список композици�
 npx remotion still <CompId> out/p.png --frame=30   # один кадр для проверки
 npx remotion render <CompId> out/video.mp4    # рендер MP4
 npm run assets -- --query "ocean" --kind video --count 2   # скачать сток
+npm run bake                                  # запечь физику всех сцен → sim.json (перед рендером)
+npm run bake -- shells                        # запечь одну сцену (poc | shells)
 npm run lint                                  # eslint + tsc
 ```
 

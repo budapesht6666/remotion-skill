@@ -9,6 +9,8 @@ import { CodeReveal } from "./compositions/CodeReveal/CodeReveal";
 import { DataChart } from "./compositions/DataChart/DataChart";
 import { MatrixRain } from "./compositions/MatrixRain/MatrixRain";
 import { ReactTodoLesson } from "./compositions/ReactTodoLesson/ReactTodoLesson";
+import { PhysicsScene } from "./compositions/PhysicsScene/PhysicsScene";
+import { ShellEject } from "./compositions/ShellEject/ShellEject";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -134,6 +136,30 @@ const opacity = interpolate(
           headColor: "#d8ffe4",
           tailColor: "#00ff41",
         }}
+      />
+
+      {/* PoC-пайплайн физики: запечённая cannon-es-симуляция + облёт камеры.
+          Запечь перед рендером: npm run bake (→ PhysicsScene/sim.json). */}
+      <Composition
+        id="PhysicsScene"
+        component={PhysicsScene}
+        durationInFrames={seconds(6)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{}}
+      />
+
+      {/* Герой-сцена: выстрел + вылет гильз (запечённая физика cannon-es).
+          Запечь перед рендером: npm run bake -- shells (→ ShellEject/sim.json). */}
+      <Composition
+        id="ShellEject"
+        component={ShellEject}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{}}
       />
     </>
   );
