@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Composition } from "remotion";
+import { Composition, staticFile } from "remotion";
 import { FORMAT, seconds } from "./lib/format";
 import { KineticText } from "./compositions/KineticText/KineticText";
 import { CaptionedVideo } from "./compositions/CaptionedVideo/CaptionedVideo";
@@ -12,6 +12,7 @@ import { ReactTodoLesson } from "./compositions/ReactTodoLesson/ReactTodoLesson"
 import { PhysicsScene } from "./compositions/PhysicsScene/PhysicsScene";
 import { ShellEject } from "./compositions/ShellEject/ShellEject";
 import { TunnelRush } from "./compositions/TunnelRush/TunnelRush";
+import { JuniorKumite, type Clip } from "./compositions/JuniorKumite/JuniorKumite";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -185,6 +186,47 @@ const opacity = interpolate(
           // Kevin MacLeod «Space Fighter Loop» (CC BY 4.0) — см. public/MUSIC-CREDITS.md.
           // null = тихий рендер.
           musicSrc: "tunnel-music.mp3" as string | null,
+        }}
+      />
+
+      {/* Сквозная история из нарезки чужого фильма. Клипы режет
+          `npm run cut -- JuniorKumite` по src/compositions/JuniorKumite/script.ts;
+          длительность композиции считается из public/clips/JuniorKumite/clips.json. */}
+      <Composition
+        id="JuniorKumite"
+        component={JuniorKumite}
+        durationInFrames={seconds(60)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as Clip[],
+          accent: "#fbbf24",
+          title: "Джун пришёл устраиваться на работу",
+          // Караоке по словам нашей озвучки в нижней полосе кадра.
+          showCaptions: true,
+          // Кадрирование крутится в студии: правая панель props, ползунки
+          // применяются к превью сразу. Подобранные значения сохраняются
+          // кнопкой «Save» — она пишет их сюда, в defaultProps.
+          videoScale: 1,
+          videoShiftY: 0,
+          bandStyle: "blur" as "blur" | "black",
+          // Kevin MacLeod «Sneaky Snitch» (CC BY 4.0) — см. public/MUSIC-CREDITS.md.
+          musicSrc: "comedy-music.mp3" as string | null,
+          musicVolume: 0.1,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile("clips/JuniorKumite/clips.json"));
+          if (!res.ok) {
+            // Клипы ещё не нарезаны — композиция должна открываться в студии.
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as Clip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total, 1),
+            props: { ...props, clips },
+          };
         }}
       />
     </>

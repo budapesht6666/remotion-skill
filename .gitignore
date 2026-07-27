@@ -7,6 +7,13 @@ dist
 out
 public/assets
 
+# Нарезанные фрагменты чужих фильмов и временные файлы индексации.
+# Сами индексы (data/index/<фильм>/quotes.json, shots.json) коммитить можно —
+# они маленькие и переиспользуются между роликами.
+public/clips
+public/vo
+data/index/*/.tmp
+
 # Локальные бинарники whisper.cpp, если добавите авто-субтитры позже.
 whisper.cpp
 

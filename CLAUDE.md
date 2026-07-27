@@ -18,7 +18,10 @@ TikTok) на **Remotion 4** с помощью Claude Code. Это песочни
 
 **Локальные скиллы проекта:** `/remotion-3d` — рецепт настоящего 3D на
 `@remotion/three` (пролёт камеры, глубина, инстансинг, шейдеры; эталон
-`MatrixRain`); `/qa-filmstrip` — проверка плавности ролика (контактный лист +
+`MatrixRain`); `/film-remix` — пайплайн «чужой фильм → свой ролик» (индексация
+реплик и действий, нарезка, смешной перевод; эталон `JuniorKumite`);
+`/voice-over` — многоголосая озвучка (ElevenLabs → Gemini → edge-tts, тайминги
+слов для караоке); `/qa-filmstrip` — проверка плавности ролика (контактный лист +
 детектор статтера/фризов на ffmpeg) перед сдачей.
 
 Общайся с пользователем на русском.
@@ -48,14 +51,31 @@ src/
   compositions/<Имя>/      рецепты (см. таблицу ниже)
 scripts/
   fetch-assets.ts          CLI скачивания стока → public/assets
+  index-quotes.ts          фильм → все реплики с таймкодами (Groq whisper-large-v3-turbo)
+  index-shots.ts           зона фильма → индекс действий с таймкодами (Gemini video)
+  contact-sheet.ts         кадры фильма в один лист с выжженным таймкодом (агент читает глазами)
+  voice-over.ts            озвучка реплик сценария (ElevenLabs → Gemini → edge-tts)
+  cut-clips.ts             нарезка фрагментов по script.ts → public/clips/<Композиция>/
+  lib/films.ts             реестр локальных исходников (пути к файлам на диске)
+  lib/media.ts             обёртки ffmpeg/ffprobe
+  lib/edge_tts_words.py    edge-tts с пословными таймингами (для караоке)
   bake-physics.ts          CLI запекания cannon-es-симуляций → sim.json (сцены poc, shells)
   lib/stock.ts             провайдеры Unsplash/Pexels/Pixabay
+data/index/<фильм>/        индексы фильма: quotes.json/txt (реплики), shots.json/txt (действия)
 public/
   captions.json            пример субтитров (формат Caption[])
   assets/                  скачанный сток (в .gitignore)
+  clips/<Композиция>/      нарезанные фрагменты + clips.json (в .gitignore)
+  vo/<Композиция>/         озвучка + vo.json со словами и таймингами (в .gitignore)
   models/                  GLTF-модели (пистолет Quaternius CC0) + CREDITS.md
-.claude/skills/shorts-director/SKILL.md   скилл-оркестратор
+out/<Проект>/              рендеры и служебное: у каждого ролика/фильма своя папка
+.claude/skills/            shorts-director (оркестратор), film-remix, voice-over, qa-filmstrip, remotion-3d
 ```
+
+**Раскладка `out/`.** Ничего не кладём в корень `out/`: рендеры идут в
+`out/<Композиция>/<имя>.mp4`, контрольные кадры — в `out/<Композиция>/frames/`,
+контактные листы фильма — в `out/<фильм>/sheets/<зона>/`. Каталог целиком в
+`.gitignore`.
 
 ### Рецепты
 
@@ -70,6 +90,7 @@ public/
 | `MatrixRain` | Премиум 3D: цифровой дождь Матрицы, пролёт камеры сквозь глифы (`/remotion-3d`) |
 | `PhysicsScene` | Физика + 3D-облёт: симуляция cannon-es запекается скриптом в `sim.json`, рендер читает позы по кадру (PoC-пайплайн под гильзу/осколки) |
 | `ShellEject` | Герой-сцена «выстрел + вылет гильз»: латунные гильзы cannon-es (fireFrame + импульс), **реальная GLTF-модель пистолета** (Quaternius 9mm, CC0) + IBL (RoomEnvironment) + ACES + тени + облёт камеры (вспышка/дым — Тир 2) |
+| `JuniorKumite` | **Смешной перевод**: чужой фильм нарезается в новую историю, герои говорят нашими голосами («собеседование джуна в 2026» на кадрах «Кровавого спорта»). Пайплайн: `quotes` (Groq ASR) и `shots` (Gemini video) строят индексы → сценарий в `script.ts` → `vo` (многоголосый TTS) → `cut` (длина клипа подчиняется длине реплики) → монтаж. Кадрирование под вертикаль per-бит (`zoom`/`panX`/`panY`), замедление кульминаций (`slow`), приглушённый оригинал (`originalVolume`) |
 | `TunnelRush` | Полёт по неоновой трубе на **настоящей полётной физике**: 45 c / 60fps. Трасса не задана кривой, а проинтегрирована из команд пилота (крен + перегрузка), поэтому радиус виража = `v²/(n·g)`: на 1600 км/ч поворот пологий, а тугую петлю приходится проходить, сбросив скорость торможением в 5 g. Разгон → бочка → штопор → петля 360° → большой вираж → гипер → врата. Камера — голова пилота на пружине (перегрузки, лаг, микровибрация) + приборы кокпита (G-метр, авиагоризонт). Ограничения по светочувствительности зашиты в рецепт |
 
 ## Команды
@@ -80,6 +101,12 @@ npm run compositions                          # список композици�
 npx remotion still <CompId> out/p.png --frame=30   # один кадр для проверки
 npx remotion render <CompId> out/video.mp4    # рендер MP4
 npm run assets -- --query "ocean" --kind video --count 2   # скачать сток
+npm run quotes -- <фильм>                     # индекс всех реплик фильма (Groq ASR) → data/index/
+npm run shots -- <фильм> --from 26:00 --to 28:00   # индекс действий в зоне (Gemini video)
+npm run sheet -- <фильм> --from 40:00 --to 42:00 --every 4   # контактный лист с таймкодами
+npm run vo -- <Композиция>                    # озвучка: ElevenLabs → Gemini → edge-tts (фолбэк автоматом)
+npm run vo -- <Композиция> --engine edge      # принудительно один движок
+npm run cut -- <Композиция>                   # нарезать клипы по script.ts → public/clips/
 npm run bake                                  # запечь физику всех сцен → sim.json (перед рендером)
 npm run bake -- shells                        # запечь одну сцену (poc | shells)
 npm run flight                                # телеметрия полётного плана TunnelRush без рендера
@@ -114,10 +141,15 @@ npm run lint                                  # eslint + tsc
 подобрать бесплатный (YouTube-safe). Если да — `<Audio src={staticFile(...)} volume={...} />`
 с fade-in/out и громкостью ~0.3–0.4.
 
-Озвучка (TTS) и авто-субтитры (Whisper) пока не подключены — по запросу. Порядок:
-текст → TTS → файл в `public/` → `<Audio>`; для авто-таймингов субтитров —
-`@remotion/install-whisper-cpp` (`transcribe` → `toCaptions` → `captions.json`) →
-рецепт `CaptionedVideo`.
+**Озвучка подключена** — скилл `/voice-over`, скрипт `npm run vo -- <Композиция>`.
+Реплики берутся из `script.ts` (поля `speaker` + `line`), голоса персонажей — из
+`<Композиция>/voices.ts`. Движки пробуются по приоритету **ElevenLabs → Gemini TTS
+→ edge-tts**: если верхний недоступен (нет ключа, кончилась квота), скрипт сам
+спускается на следующий. ElevenLabs даёт посимвольные тайминги — по ним рисуется
+караоке; ключи в `.env` (`ELEVENLABS_API_KEY`, `GEMINI_API_KEY`).
+
+Транскрипция чужого аудио (для индекса реплик фильма) — `npm run quotes` через
+Groq; локальный `@remotion/install-whisper-cpp` не используем, он в 60 раз медленнее.
 
 ## Лицензия
 Remotion бесплатен для команд до 3 человек; от 4 — платная Company License
