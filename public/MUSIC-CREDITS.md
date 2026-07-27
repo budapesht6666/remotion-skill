@@ -38,6 +38,28 @@ Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
 
+## phonk-heavy.mp3 — используется в композиции `BeekeeperKong`
+
+- **Трек:** «Volatile Reaction»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Volatile%20Reaction.mp3
+
+Не фонк в строгом смысле (у Kevin MacLeod фонка нет), но тяжёлый и качающий —
+на финале выводится вперёд с 0.12 до 0.5 и держит титульную плашку.
+
+```
+Music: "Volatile Reaction" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## sfx/ — синтезированные эффекты (без атрибуции)
+
+`beep.mp3` (цензурный бип 1 кГц), `bass-drop.mp3` (свип 150→35 Гц под
+чёрно-белую отбивку) и `crickets.mp3` (стрёкот в повисшей паузе) сгенерированы
+локально через `ffmpeg -f lavfi -i aevalsrc=...` — прав третьих лиц в них нет.
+
 ## music.mp3 — lo-fi трек для `ReactTodoLesson`
 
 Из YouTube Audio Library (без атрибуции).

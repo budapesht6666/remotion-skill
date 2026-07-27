@@ -12,6 +12,7 @@
     "compositions": "remotion compositions",
     "assets": "tsx scripts/fetch-assets.ts",
     "quotes": "tsx scripts/index-quotes.ts",
+    "subs": "tsx scripts/subs-to-quotes.ts",
     "shots": "tsx scripts/index-shots.ts",
     "sheet": "tsx scripts/contact-sheet.ts",
     "cut": "tsx scripts/cut-clips.ts",

@@ -21,6 +21,18 @@ export const FILMS: Film[] = [
     path: "C:/torrent/Кровавый спорт.1988.BDRip.Kinozal-Райдэн.avi",
     language: "ru",
   },
+  {
+    slug: "beekeeper",
+    title: "Пчеловод (2024)",
+    path: "C:/torrent/Pchelovod.2024.AMZN.WEB-DLRip.AVC.mkv",
+    language: "ru",
+  },
+  {
+    slug: "godzilla-kong",
+    title: "Годзилла и Конг: Новая империя (2024)",
+    path: "C:/torrent/Godzilla x Kong. The New Empire (2024).mkv",
+    language: "ru",
+  },
 ];
 
 export function findFilm(slugOrPath: string): Film {

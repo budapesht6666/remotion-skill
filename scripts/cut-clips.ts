@@ -193,11 +193,23 @@ async function main() {
   }
 
   const metaPath = path.join(outDir, "clips.json");
-  await writeFile(metaPath, JSON.stringify(metas, null, 2), "utf8");
+  // При --only перерезаются отдельные биты, но манифест обязан описывать ролик
+  // целиком: иначе композиция соберётся из двух клипов, а остальные пропадут с
+  // таймлайна. Поэтому обновляем записи поверх прежнего манифеста и раскладываем
+  // их в порядке SCRIPT — он и есть монтажный лист.
+  const previous: ClipMeta[] = only && existsSync(metaPath)
+    ? (JSON.parse(await readFile(metaPath, "utf8")) as ClipMeta[])
+    : [];
+  const merged = only
+    ? SCRIPT.map((b) => metas.find((m) => m.id === b.id) ?? previous.find((m) => m.id === b.id))
+        .filter((m): m is ClipMeta => Boolean(m))
+    : metas;
+  await writeFile(metaPath, JSON.stringify(merged, null, 2), "utf8");
 
-  const total = metas.reduce((s, m) => s + m.durationInFrames, 0);
+  const total = merged.reduce((s, m) => s + m.durationInFrames, 0);
   console.log(
-    `\nГотово за ${((Date.now() - t0) / 1000).toFixed(0)} c: ${metas.length} клипов, ` +
+    `\nГотово за ${((Date.now() - t0) / 1000).toFixed(0)} c: ` +
+      `${metas.length} клипов перерезано, в манифесте ${merged.length}, ` +
       `${(total / FORMAT.fps).toFixed(1)} c хронометража\n  ${metaPath}`,
   );
   if (stretched.length > 0) {

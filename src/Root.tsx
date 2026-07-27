@@ -13,6 +13,11 @@ import { PhysicsScene } from "./compositions/PhysicsScene/PhysicsScene";
 import { ShellEject } from "./compositions/ShellEject/ShellEject";
 import { TunnelRush } from "./compositions/TunnelRush/TunnelRush";
 import { JuniorKumite, type Clip } from "./compositions/JuniorKumite/JuniorKumite";
+import {
+  BeekeeperKong,
+  TITLE_CARD_FRAMES,
+  type Clip as BeekeeperClip,
+} from "./compositions/BeekeeperKong/BeekeeperKong";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -225,6 +230,57 @@ const opacity = interpolate(
           const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
           return {
             durationInFrames: Math.max(total, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Пчеловод 3: Опекунство» — смешной перевод на кадрах ДВУХ фильмов
+          («Годзилла и Конг» + «Пчеловод»). Сборка:
+          `npm run vo -- BeekeeperKong` → `npm run cut -- BeekeeperKong`;
+          длительность = сумма клипов + кадры титульной плашки. */}
+      <Composition
+        id="BeekeeperKong"
+        component={BeekeeperKong}
+        durationInFrames={seconds(60)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as BeekeeperClip[],
+          accent: "#fbbf24",
+          title: "Стетхем воспитывает титанов",
+          showCaptions: true,
+          // Исходники 2.39:1 — шире, чем 1.85:1 у «Кровавого спорта», поэтому
+          // при videoScale 1 кадр занимал бы лишь ~40 % вертикали. 1.35 доводит
+          // его до ~55 %: лица читаются, полосы под текст остаются.
+          videoScale: 1.35,
+          videoShiftY: 0,
+          bandStyle: "blur" as "blur" | "black",
+          // Псевдо-мудрость про арифметику ошибок — уходит в ч/б с бас-дропом.
+          bwBeats: ["b16"],
+          // Повисшая пауза после первого панча.
+          cricketBeats: ["b08"],
+          titleCardAfter: "b27",
+          titleCardMain: "Пчеловод 3",
+          titleCardSub: "Опекунство",
+          stingerText: "А ульи теперь возят они",
+          // Kevin MacLeod «Volatile Reaction» (CC BY 4.0) — см. public/MUSIC-CREDITS.md.
+          musicSrc: "phonk-heavy.mp3" as string | null,
+          musicVolume: 0.12,
+          musicFinaleVolume: 0.5,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile("clips/BeekeeperKong/clips.json"));
+          if (!res.ok) {
+            // Клипы ещё не нарезаны — композиция должна открываться в студии.
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as BeekeeperClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          const hasTitleCard = clips.some((c) => c.id === props.titleCardAfter);
+          return {
+            durationInFrames: Math.max(total + (hasTitleCard ? TITLE_CARD_FRAMES : 0), 1),
             props: { ...props, clips },
           };
         }}
