@@ -54,6 +54,23 @@ Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
 
+## blues-calm.mp3 — используется в композиции `StethamTales`
+
+- **Трек:** «Deuces»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Deuces.mp3
+
+Ленивый блюзовый шаффл под закадровый монолог: играет тихо (0.16) первые
+54 секунды и обрывается на фразе «отмудохал я их по-пацански», где вступает
+`phonk-heavy.mp3`. Стык проложен бас-дропом.
+
+```
+Music: "Deuces" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
 ## sfx/ — синтезированные эффекты (без атрибуции)
 
 `beep.mp3` (цензурный бип 1 кГц), `bass-drop.mp3` (свип 150→35 Гц под

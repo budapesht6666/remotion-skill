@@ -18,6 +18,11 @@ import {
   TITLE_CARD_FRAMES,
   type Clip as BeekeeperClip,
 } from "./compositions/BeekeeperKong/BeekeeperKong";
+import {
+  StethamTales,
+  type Clip as StethamClip,
+  type Phrase as StethamPhrase,
+} from "./compositions/StethamTales/StethamTales";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -282,6 +287,63 @@ const opacity = interpolate(
           return {
             durationInFrames: Math.max(total + (hasTitleCard ? TITLE_CARD_FRAMES : 0), 1),
             props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Стетхем поясняет монстрам за пасеку» — закадровый монолог поверх кадров
+          двух фильмов. Готовится: `npm run vo -- StethamTales` →
+          `npm run broll -- StethamTales`; длительность и тайминги слов целиком
+          приезжают из broll.json, руками ничего считать не нужно. */}
+      <Composition
+        id="StethamTales"
+        component={StethamTales}
+        durationInFrames={seconds(70)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as StethamClip[],
+          phrases: [] as StethamPhrase[],
+          narrationFile: "vo/StethamTales/narration.m4a",
+          accent: "#fbbf24",
+          title: "Пчеловод против титанов",
+          showCaptions: true,
+          // Те же 2.39:1, что и в BeekeeperKong: 1.35 доводит кадр до ~55 %
+          // вертикали — лица читаются, полосы под текст остаются.
+          videoScale: 1.35,
+          videoShiftY: 0,
+          bandStyle: "blur" as "blur" | "black",
+          // С этой фразы («отмудохал я их по-пацански») блюз сменяется фонком.
+          finalePhrase: "n20",
+          // Kevin MacLeod, CC BY 4.0 — см. public/MUSIC-CREDITS.md.
+          musicSrc: "blues-calm.mp3" as string | null,
+          finaleMusicSrc: "phonk-heavy.mp3" as string | null,
+          musicVolume: 0.16,
+          finaleMusicVolume: 0.42,
+          outroMain: "Важно, что у тебя есть ноги",
+          outroCta: "Подписывайся",
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile("clips/StethamTales/broll.json"));
+          if (!res.ok) {
+            // Планы ещё не нарезаны — композиция должна открываться в студии.
+            return { durationInFrames: seconds(1), props };
+          }
+          const manifest = (await res.json()) as {
+            narrationFile: string;
+            durationInFrames: number;
+            clips: StethamClip[];
+            phrases: StethamPhrase[];
+          };
+          return {
+            durationInFrames: Math.max(manifest.durationInFrames, 1),
+            props: {
+              ...props,
+              clips: manifest.clips,
+              phrases: manifest.phrases,
+              narrationFile: manifest.narrationFile,
+            },
           };
         }}
       />
