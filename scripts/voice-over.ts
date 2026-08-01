@@ -27,6 +27,8 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { probe, run } from "./lib/media";
+import { stripStress } from "./lib/text";
+import { applyRules, elevenLocators, loadPronunciation, rulesSignature } from "./lib/pronunciation";
 
 const GEMINI_ROOT = "https://generativelanguage.googleapis.com/v1beta";
 const GEMINI_MODEL = process.env.GEMINI_TTS_MODEL ?? "gemini-2.5-flash-preview-tts";
@@ -97,6 +99,7 @@ async function synthesizeEleven(
   voice: VoiceDef,
   dest: string,
   apiKey: string,
+  locators: ReturnType<typeof elevenLocators>,
 ): Promise<Word[]> {
   const res = await fetch(
     `${ELEVEN_ROOT}/text-to-speech/${voice.elevenVoiceId}/with-timestamps`,
@@ -106,6 +109,7 @@ async function synthesizeEleven(
       body: JSON.stringify({
         text,
         model_id: ELEVEN_MODEL,
+        ...(locators ? { pronunciation_dictionary_locators: locators } : {}),
         voice_settings: {
           stability: voice.stability,
           similarity_boost: 0.75,
@@ -253,6 +257,16 @@ async function main() {
   const order = forcedEngine ? [forcedEngine] : ENGINE_ORDER.filter((e) => !disabled.has(e));
   console.log(`Движки по приоритету: ${order.join(" → ")}`);
 
+  // Словарь произношения: ElevenLabs получает локатор, остальные движки — ту же
+  // замену локально, чтобы ударения не зависели от того, какой движок выжил.
+  const pron = await loadPronunciation();
+  const locators = elevenLocators(pron);
+  if (pron.rules.length && !locators) {
+    console.log(`⚠ Словарь произношения не синхронизирован — запусти npm run dict`);
+  } else if (locators) {
+    console.log(`Словарь произношения: ${pron.rules.length} правил (${pron.hash})`);
+  }
+
   const compDir = path.resolve("src/compositions", comp);
   const { SCRIPT } = (await import(pathToFileURL(path.join(compDir, "script.ts")).href)) as {
     SCRIPT: ScriptBeat[];
@@ -295,8 +309,11 @@ async function main() {
           : candidate === "gemini"
             ? `gemini|${GEMINI_MODEL}|${voice.voice}|${voice.stylePrompt}`
             : `edge|${voice.edgeVoice}|${voice.pitch}`;
+      // Правила произношения входят в подпись, но только те, что задевают эту
+      // реплику: поменял слово — переозвучились фразы с этим словом, а не весь
+      // ролик.
       hash = createHash("sha1")
-        .update(`${signature}|${voice.rate}|${beat.line}`)
+        .update(`${signature}|${voice.rate}|${rulesSignature(beat.line!, pron.rules)}|${beat.line}`)
         .digest("hex")
         .slice(0, 12);
 
@@ -317,13 +334,13 @@ async function main() {
       rawPath = path.join(outDir, `${beat.id}.${candidate === "gemini" ? "wav" : "mp3"}`);
       try {
         if (candidate === "eleven") {
-          words = await synthesizeEleven(beat.line!, voice, rawPath, elevenKey!);
+          words = await synthesizeEleven(beat.line!, voice, rawPath, elevenKey!, locators);
         } else if (candidate === "gemini") {
           if (geminiCalls > 0) await new Promise((r) => setTimeout(r, GEMINI_THROTTLE_MS));
           geminiCalls++;
-          words = await synthesizeGemini(beat.line!, voice, rawPath, geminiKey!);
+          words = await synthesizeGemini(applyRules(beat.line!, pron.rules), voice, rawPath, geminiKey!);
         } else {
-          words = await synthesizeEdge(beat.line!, voice, rawPath);
+          words = await synthesizeEdge(applyRules(beat.line!, pron.rules), voice, rawPath);
         }
         engine = candidate;
         break;
@@ -368,13 +385,15 @@ async function main() {
     if (tokens.length === words.length) {
       words = words.map((word, i) => ({ ...word, w: tokens[i] }));
     }
+    // Знак ударения нужен был движку, в субтитре он мусор.
+    words = words.map((word) => ({ ...word, w: stripStress(word.w) }));
 
     const info = await probe(file);
     clips.push({
       id: beat.id,
       file: `vo/${comp}/${beat.id}.m4a`,
       speaker: beat.speaker!,
-      line: beat.line!,
+      line: stripStress(beat.line!),
       engine,
       durationInSeconds: Number(info.duration.toFixed(2)),
       words,

@@ -21,6 +21,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { run, tc } from "./lib/media";
 import { findFilm } from "./lib/films";
+import { stripStress } from "./lib/text";
 import { FORMAT } from "../src/lib/format";
 
 export type Beat = {
@@ -183,7 +184,7 @@ async function main() {
       // Под репликой звучит уже безречевой гул — его можно держать заметнее,
       // чем раньше приглушённые диалоги.
       originalVolume: beat.originalVolume ?? (beat.line ? 0.4 : 0.6),
-      caption: beat.caption ?? beat.line ?? null,
+      caption: stripStress(beat.caption ?? beat.line ?? "") || null,
       kind: beat.kind,
       zoom: beat.zoom ?? 1,
       panX: beat.panX ?? 0,

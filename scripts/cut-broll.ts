@@ -31,6 +31,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { run, tc, probe } from "./lib/media";
 import { findFilm } from "./lib/films";
+import { stripStress } from "./lib/text";
 import { FORMAT } from "../src/lib/format";
 
 /** План видеоряда: кусок фильма, привязанный к фразе монолога. */
@@ -191,7 +192,7 @@ async function main() {
 
     phrases.push({
       id: phrase.id,
-      line: phrase.line,
+      line: stripStress(phrase.line),
       start: Number(cursor.toFixed(3)),
       end: Number((cursor + speech).toFixed(3)),
       wisdom: Boolean(phrase.wisdom),

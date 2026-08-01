@@ -21,7 +21,8 @@
     "flight": "tsx scripts/check-flight.ts",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
-    "vo": "tsx scripts/voice-over.ts"
+    "vo": "tsx scripts/voice-over.ts",
+    "dict": "tsx scripts/pronunciation.ts"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",
