@@ -45,6 +45,8 @@ const loadBoard: CalculateMetadataFunction<WhiteboardSchema> = async ({ props })
       ...props,
       elements: manifest.elements,
       camera: manifest.camera,
+      // Клики появились позже манифестов первых роликов — у них поля нет.
+      clicks: manifest.clicks ?? [],
       board: manifest.board,
       narrationFile: manifest.narrationFile,
       exitFrom: manifest.hand.exitFrom,
@@ -416,6 +418,11 @@ const opacity = interpolate(
           // физически медленнее размашистой обводки контура.
           handWobbleFrames: 7,
           handWobbleAmp: 15,
+          // Финального клика перчаткой в этом ролике нет — пустой путь.
+          gloveSrc: "",
+          gloveWidth: 340,
+          gloveTipX: 0.486,
+          gloveTipY: 0.183,
           musicSrc: "whiteboard-music.mp3",
           musicVolume: 0.085,
           exitFrom: 0,
@@ -423,6 +430,7 @@ const opacity = interpolate(
           narrationFile: "",
           elements: [],
           camera: [],
+          clicks: [],
           board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
         }}
         calculateMetadata={loadBoard}
@@ -455,6 +463,10 @@ const opacity = interpolate(
           handTilt: 0,
           handWobbleFrames: 7,
           handWobbleAmp: 15,
+          gloveSrc: "",
+          gloveWidth: 340,
+          gloveTipX: 0.486,
+          gloveTipY: 0.183,
           musicSrc: "moonscar-music.mp3",
           musicVolume: 0.085,
           exitFrom: 0,
@@ -462,6 +474,54 @@ const opacity = interpolate(
           narrationFile: "",
           elements: [],
           camera: [],
+          clicks: [],
+          board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
+        }}
+        calculateMetadata={loadBoard}
+      />
+
+      {/*
+        Тот же рецепт доски, но рисунки РЕАЛИСТИЧНЫЕ КАРАНДАШНЫЕ: тон и
+        растушёвка вместо плоского контура, залитый графитом фон у космических
+        кадров, цвет ровно в трёх местах на весь ролик. Рисуется в две фазы
+        (обводка → растушёвка), поэтому и рука здесь с карандашом, а не с
+        маркером: инструмент в кадре должен уметь то, что появляется на бумаге.
+      */}
+      <Composition
+        id="MoonStrike"
+        component={Whiteboard}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        schema={whiteboardSchema}
+        // Те же правила, что и выше: в defaultProps только литералы.
+        defaultProps={{
+          paper: "#fbfbf7",
+          boardFile: "clips/MoonStrike/board.json",
+          handSrc: "whiteboard/hand/right-pencil.png",
+          handWidth: 620,
+          // Кончик грифеля, найденный cutoutHand при генерации руки.
+          handTipX: 0.245,
+          handTipY: 0.514,
+          handFlip: false,
+          handTilt: 0,
+          handWobbleFrames: 7,
+          handWobbleAmp: 15,
+          // Перчатка-курсор для финального клика по колокольчику. Кончик
+          // указательного пальца найден cutoutHand при генерации.
+          gloveSrc: "whiteboard/hand/glove-cursor.png",
+          gloveWidth: 340,
+          gloveTipX: 0.486,
+          gloveTipY: 0.183,
+          musicSrc: "moonstrike-music.mp3",
+          musicVolume: 0.085,
+          exitFrom: 0,
+          exitFrames: 22,
+          narrationFile: "",
+          elements: [],
+          camera: [],
+          clicks: [],
           board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
         }}
         calculateMetadata={loadBoard}

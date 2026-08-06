@@ -22,7 +22,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { FORMAT } from "../src/lib/format";
-import { fitInkToBox, writeJson } from "./lib/artwork";
+import { fitInkToBox, mulberry32, writeJson } from "./lib/artwork";
 import { buildNarration, type VoiceClip } from "./lib/narration";
 import type { ArtFile } from "./prepare-art";
 import type {
@@ -31,6 +31,8 @@ import type {
   ArtItem,
   TextItem,
   AccentItem,
+  ClickItem,
+  ClickMove,
   Stroke,
   BoardElement,
   CameraMove,
@@ -60,8 +62,29 @@ const MIN_STROKE_FRAMES = 3;
 const STROKE_EXP = 0.7;
 /** Хвост после последнего элемента: уход руки и финальный холд. */
 const TAIL_FRAMES = 40;
+/**
+ * Подлёт перчатки к цели и её уход, кадры. Подлёт долгий нарочно: рисующая рука
+ * уходит за 22 кадра после последнего штриха, и нажатие должно случиться уже
+ * без неё, иначе в кадре одновременно две руки.
+ */
+const GLOVE_IN_FRAMES = 26;
+const GLOVE_OUT_FRAMES = 12;
 /** Толщина пера маски относительно толщины линии рисунка. */
 const MASK_WIDTH_RATIO = 0.02;
+/**
+ * У графита перо обводки шире: линия там не чернильная, а карандашная, с
+ * размытой кромкой, и узкое перо открывало бы её половинками.
+ */
+const GRAPHITE_MASK_RATIO = 0.035;
+/** Доля бюджета кадров под растушёвку, если сценарий не сказал иначе. */
+const SHADE_SHARE = 0.55;
+/**
+ * Границы читаемой скорости пера, px доски на кадр. Замер из демо: на
+ * иллюстрациях перо идёт 150–275. Быстрее — рука телепортируется, медленнее —
+ * ползёт, и оба случая видно на фильмстрипе.
+ */
+const PEN_SPEED_MAX = 400;
+const PEN_SPEED_MIN = 40;
 /** Толщина краски акцентов, экранные px. */
 const ACCENT_WIDTH = 12;
 /**
@@ -91,17 +114,6 @@ function parseArgs(argv: string[]): Args {
   };
 }
 
-/** Детерминированный ГПСЧ: без него `still` и полный рендер разойдутся. */
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 function hashId(id: string): number {
   let h = 2166136261;
   for (let i = 0; i < id.length; i++) {
@@ -127,10 +139,16 @@ function scheduleStrokes(
   lengths: number[],
   drawFrom: number,
   drawFrames: number,
+  /**
+   * Отрыв пера между штрихами. У растушёвки его нет: карандаш ходит туда-сюда,
+   * не отрываясь от бумаги, и заложенная пауза только съедала бюджет — на
+   * четырнадцати полосах это 26 кадров из 56, то есть половина фазы.
+   */
+  penUpFrames: number = PEN_UP_FRAMES,
 ): { schedule: { from: number; frames: number }[]; tight: boolean } {
   const n = lengths.length;
 
-  let penUp = PEN_UP_FRAMES;
+  let penUp = penUpFrames;
   let minFrames = MIN_STROKE_FRAMES;
   let tight = false;
 
@@ -333,6 +351,7 @@ async function main() {
   let timeAcc = 0;
   let prevScreen = BOARD[0]?.screen ?? 0;
   const camera: CameraMove[] = [];
+  const clicks: ClickMove[] = [];
 
   for (const phrase of phrases) {
     const source = SCRIPT.find((p) => p.id === phrase.id);
@@ -380,35 +399,86 @@ async function main() {
         }
         const target: Rect = { ...item.rect, y: item.rect.y + screenY };
         const fit = fitInkToBox({ width: rec.width, height: rec.height, inkBox: rec.inkBox }, target);
+        const graphite = rec.shading !== undefined && rec.shading.length > 0;
+
+        /**
+         * ДВЕ ФАЗЫ РИСОВАНИЯ у графита: сначала рука обводит главные формы, потом
+         * растушёвывает тон широким пером. Бюджет делится между ними, каждая
+         * раскладывается отдельно — так растушёвка не отбирает кадры у обводки
+         * и наоборот. У плоского line-art фаза одна, ветка ниже её и считает.
+         */
+        const shadeShare = graphite ? (item.shadeShare ?? SHADE_SHARE) : 0;
+        const shadeFrames = Math.round(drawFrames * shadeShare);
+        const outlineFrames = drawFrames - shadeFrames;
+
         // Столько контуров умещается в слот, не опускаясь ниже читаемого
         // минимума кадров на штрих.
-        const affordable = Math.max(4, Math.floor(drawFrames / (MIN_STROKE_FRAMES + PEN_UP_FRAMES)));
+        const affordable = Math.max(4, Math.floor(outlineFrames / (MIN_STROKE_FRAMES + PEN_UP_FRAMES)));
         const contours = mergeContours(rec.contours, Math.min(MAX_CONTOURS, affordable));
         if (contours.length < rec.contours.length) {
           report.push(
             `${"".padEnd(14)}      слито контуров: ${rec.contours.length} → ${contours.length}`,
           );
         }
-        const { schedule, tight } = scheduleStrokes(
+        const outline = scheduleStrokes(
           contours.map((c) => c.length),
           drawFrom,
-          drawFrames,
+          outlineFrames,
         );
         const strokes: Stroke[] = contours.map((c, i) => ({
           d: c.d,
           length: c.length,
-          from: schedule[i].from,
-          frames: schedule[i].frames,
+          from: outline.schedule[i].from,
+          frames: outline.schedule[i].frames,
           // Сплошная фигура: после обводки контур заливается в маске, иначе у
           // залитой стрелки открылась бы кромка, а середина осталась скрытой.
           ...(c.solid ? { fill: true } : {}),
         }));
+
+        let tight = outline.tight;
+        if (graphite) {
+          const rows = rec.shading as { d: string; length: number }[];
+          const shade = scheduleStrokes(
+            rows.map((r) => r.length),
+            drawFrom + outlineFrames,
+            shadeFrames,
+            0,
+          );
+          tight = tight || shade.tight;
+          rows.forEach((r, i) => {
+            strokes.push({
+              d: r.d,
+              length: r.length,
+              from: shade.schedule[i].from,
+              frames: shade.schedule[i].frames,
+              // Перо растушёвки в разы шире обводочного — тон кладут плашмя.
+              w: rec.shadeWidth,
+            });
+          });
+        }
+
         const perStroke = drawFrames / strokes.length;
         if (tight) {
           warnings.push(
-            `${item.id}: ${strokes.length} контуров на ${drawFrames} кадрах ` +
-              `(${perStroke.toFixed(1)} кадра на контур) — дайте weight, удлините фразу ` +
+            `${item.id}: ${strokes.length} штрихов на ${drawFrames} кадрах ` +
+              `(${perStroke.toFixed(1)} кадра на штрих) — дайте weight, удлините фразу ` +
               `или упростите сюжет картинки`,
+          );
+        }
+
+        // Скорость пера считается в пикселях ДОСКИ: локальные длины умножаются
+        // на масштаб посадки. Ориентир из демо — 150–275 px/кадр.
+        const penSpeed = (strokes.reduce((s, x) => s + x.length, 0) * fit.transform.scale) /
+          Math.max(1, strokes.reduce((s, x) => s + x.frames, 0));
+        if (penSpeed > PEN_SPEED_MAX) {
+          warnings.push(
+            `${item.id}: перо идёт ${penSpeed.toFixed(0)} px/кадр (>${PEN_SPEED_MAX}) — рука ` +
+              `телепортируется по рисунку, удлините фразу или дайте weight`,
+          );
+        } else if (penSpeed < PEN_SPEED_MIN) {
+          warnings.push(
+            `${item.id}: перо идёт ${penSpeed.toFixed(0)} px/кадр (<${PEN_SPEED_MIN}) — рука ползёт, ` +
+              `слот слишком длинный для такого простого рисунка`,
           );
         }
 
@@ -422,12 +492,18 @@ async function main() {
           box: fit.box,
           transform: fit.transform,
           // Контур идёт по КРАЮ чернил: перо маски должно перекрыть штрих с запасом.
-          maskWidth: Math.max(rec.width, rec.height) * MASK_WIDTH_RATIO,
+          maskWidth: Math.max(rec.width, rec.height) * (graphite ? GRAPHITE_MASK_RATIO : MASK_WIDTH_RATIO),
+          // Графит по маске никогда не открывается до конца: обводка берёт лишь
+          // главные контуры, растушёвка идёт полосами. Дорисованный показываем целиком.
+          ...(graphite ? { revealAll: true } : {}),
           strokes,
         });
         boxes.set(item.id, target);
         report.push(
-          `${item.id.padEnd(14)} art   кадры ${String(startFrame).padStart(4)}–${String(startFrame + frames).padStart(4)}  контуров ${String(strokes.length).padStart(3)}  ${perStroke.toFixed(1)} к/контур`,
+          `${item.id.padEnd(14)} art   кадры ${String(startFrame).padStart(4)}–${String(startFrame + frames).padStart(4)}  ` +
+            (graphite
+              ? `обводка ${contours.length}/${outlineFrames}к + растушёвка ${(rec.shading as unknown[]).length}/${shadeFrames}к  ${penSpeed.toFixed(0)} px/кадр`
+              : `контуров ${String(strokes.length).padStart(3)}  ${perStroke.toFixed(1)} к/контур  ${penSpeed.toFixed(0)} px/кадр`),
         );
       } else if (item.kind === "text") {
         const t = item as TextItem;
@@ -467,6 +543,34 @@ async function main() {
         boxes.set(item.id, { x: t.x, y: t.y + screenY, w: boxW, h: boxH });
         report.push(
           `${item.id.padEnd(14)} text  кадры ${String(startFrame).padStart(4)}–${String(startFrame + frames).padStart(4)}  строк ${rawLines.length}`,
+        );
+      } else if (item.kind === "click") {
+        /**
+         * Клик перчаткой. Штрихов у него нет — значит нет и слота в `elements`,
+         * и на `lastFrame` он не влияет: рисующая рука уходит по окончании
+         * последнего ШТРИХА, а перчатка прилетает уже на готовую доску.
+         */
+        const c = item as ClickItem;
+        const target = boxes.get(c.target);
+        if (!target) {
+          warnings.push(`${c.id}: клик по «${c.target}», а тот ещё не нарисован`);
+          continue;
+        }
+        // Палец встаёт в центр цели по горизонтали и чуть ниже её низа: так
+        // перчатка не закрывает то, по чему жмёт.
+        const press = Math.min(startFrame + frames - GLOVE_OUT_FRAMES, startFrame + GLOVE_IN_FRAMES + 4);
+        clicks.push({
+          target: c.target,
+          x: target.x + target.w / 2,
+          y: target.y + target.h * 0.72,
+          from: startFrame,
+          press,
+          to: startFrame + frames,
+          sfx: c.sfx ?? "sfx/bell.mp3",
+        });
+        report.push(
+          `${c.id.padEnd(14)} click кадры ${String(startFrame).padStart(4)}–${String(startFrame + frames).padStart(4)}  ` +
+            `по ${c.target}, нажатие на ${press}`,
         );
       } else {
         const a = item as AccentItem;
@@ -542,6 +646,7 @@ async function main() {
     board: { width: FORMAT.width, height: (screens - 1) * SCREEN_STEP + FORMAT.height, screens, screenStep: SCREEN_STEP },
     elements,
     camera,
+    clicks,
     phrases,
     hand: { exitFrom: lastFrame + 6, exitFrames: 22 },
   };

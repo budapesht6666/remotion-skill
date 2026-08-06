@@ -37,6 +37,24 @@ Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
 
+## moonstrike-music.mp3 — используется в композиции `MoonStrike`
+
+- **Трек:** «Lightless Dawn»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Lightless%20Dawn.mp3
+
+Нарочно НЕ «Echoes of Time v2» из `MoonScar`: два ролика по одному событию не
+должны звучать одинаково. Здесь материал — расследование, а не обвинение, и
+трек взят тише и медленнее: разреженный эмбиент без пульса, который не гонит
+рассказ. Громкость 0.085, как у остальных досок.
+
+```
+Music: "Lightless Dawn" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
 ## tunnel-music.mp3 — используется в композиции `TunnelRush`
 
 - **Трек:** «Space Fighter Loop»
@@ -111,8 +129,10 @@ https://creativecommons.org/licenses/by/4.0/
 ## sfx/ — синтезированные эффекты (без атрибуции)
 
 `beep.mp3` (цензурный бип 1 кГц), `bass-drop.mp3` (свип 150→35 Гц под
-чёрно-белую отбивку) и `crickets.mp3` (стрёкот в повисшей паузе) сгенерированы
-локально через `ffmpeg -f lavfi -i aevalsrc=...` — прав третьих лиц в них нет.
+чёрно-белую отбивку), `crickets.mp3` (стрёкот в повисшей паузе) и `bell.mp3`
+(двойной звон «цзинь-цзинь» под клик по колокольчику: два затухающих удара
+1568/2093 Гц с обертонами, второй через 0.13 c) сгенерированы локально через
+`ffmpeg -f lavfi -i aevalsrc=...` — прав третьих лиц в них нет.
 
 ## music.mp3 — lo-fi трек для `ReactTodoLesson`
 

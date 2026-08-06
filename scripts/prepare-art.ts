@@ -24,8 +24,28 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { cutoutHand, normalizeArtwork, traceArtwork, writeJson, type TracedArtwork } from "./lib/artwork";
-import { artworkPrompt, generateImage, handPrompt, DEFAULT_MODEL, type ImageModel } from "./lib/gen-image";
+import {
+  cutoutHand,
+  normalizeArtwork,
+  traceArtwork,
+  planShading,
+  readGrey,
+  estimatePaperLevel,
+  trimLightBorder,
+  cropToContent,
+  keyPaperToAlpha,
+  writeJson,
+  ALL_CONTENT,
+  type TracedArtwork,
+} from "./lib/artwork";
+import {
+  artworkPrompt,
+  generateImage,
+  glovePrompt,
+  handPrompt,
+  DEFAULT_MODEL,
+  type ImageModel,
+} from "./lib/gen-image";
 import type { BoardItem, ArtItem } from "../src/compositions/Whiteboard/types";
 
 type Args = {
@@ -33,6 +53,8 @@ type Args = {
   trace: boolean;
   force: boolean;
   hand: boolean;
+  pencil: boolean;
+  glove: boolean;
   only: string[] | null;
   model: ImageModel;
 };
@@ -46,6 +68,8 @@ function parseArgs(argv: string[]): Args {
     trace: argv.includes("--trace"),
     force: argv.includes("--force"),
     hand: argv.includes("--hand"),
+    pencil: argv.includes("--pencil"),
+    glove: argv.includes("--glove"),
     only: onlyIdx >= 0 ? (argv[onlyIdx + 1] ?? "").split(",").filter(Boolean) : null,
     model: modelIdx >= 0 ? (argv[modelIdx + 1] as ImageModel) : DEFAULT_MODEL,
   };
@@ -62,21 +86,31 @@ export type ArtRecord = {
   viewBox: string;
   inkBox: { x: number; y: number; w: number; h: number };
   contours: { d: string; length: number; solid: boolean }[];
+  /**
+   * Вторая фаза рисования — растушёвка. Есть только у `style: "graphite"`:
+   * плоский line-art открывается обводкой целиком, тону же нужна площадь.
+   */
+  shading?: { d: string; length: number }[];
+  /** Толщина пера растушёвки, локальные единицы viewBox. */
+  shadeWidth?: number;
+  style: "line" | "graphite";
   model: string;
   generatedAt: string;
 };
 
 export type ArtFile = { composition: string; items: Record<string, ArtRecord> };
 
-async function generateHand(apiKey: string, model: ImageModel, force: boolean): Promise<void> {
+async function generateHand(apiKey: string, model: ImageModel, force: boolean, pencil: boolean): Promise<void> {
   const dir = path.resolve("public/whiteboard/hand");
-  const raw = path.resolve("out/hand-raw.png");
-  const file = path.join(dir, "right-marker.png");
+  // Карандашная рука — под графитный стиль доски: маркер над растушёванным
+  // рисунком читается как чужой инструмент.
+  const raw = path.resolve(pencil ? "out/hand-pencil-raw.png" : "out/hand-raw.png");
+  const file = path.join(dir, pencil ? "right-pencil.png" : "right-marker.png");
 
   await mkdir(dir, { recursive: true });
   if (!existsSync(raw) || force) {
-    process.stdout.write("рука с маркером… ");
-    const png = await generateImage(handPrompt(), { apiKey, model, aspectRatio: "1:1" });
+    process.stdout.write(`рука с ${pencil ? "карандашом" : "маркером"}… `);
+    const png = await generateImage(handPrompt(pencil), { apiKey, model, aspectRatio: "1:1" });
     await writeFile(raw, png);
     process.stdout.write("сгенерена, ");
   } else {
@@ -92,13 +126,47 @@ async function generateHand(apiKey: string, model: ImageModel, force: boolean): 
   );
 }
 
+/**
+ * Перчатка-курсор для финального клика. Живёт рядом с руками, но это не
+ * инструмент рисования: она прилетает поверх готовой доски и жмёт по элементу.
+ */
+async function generateGlove(apiKey: string, model: ImageModel, force: boolean): Promise<void> {
+  const dir = path.resolve("public/whiteboard/hand");
+  const raw = path.resolve("out/glove-raw.png");
+  const file = path.join(dir, "glove-cursor.png");
+
+  await mkdir(dir, { recursive: true });
+  if (!existsSync(raw) || force) {
+    process.stdout.write("перчатка-курсор… ");
+    const png = await generateImage(glovePrompt(), { apiKey, model, aspectRatio: "1:1" });
+    await writeFile(raw, png);
+    process.stdout.write("сгенерена, ");
+  } else {
+    process.stdout.write("исходник есть, ");
+  }
+
+  // Кончик — самая ВЕРХНЯЯ тёмная точка: палец у перчатки поднят вверх.
+  const { width, height, tipX, tipY } = await cutoutHand(raw, file, "top");
+  console.log(`фон вырезан → ${path.relative(process.cwd(), file)} (${width}×${height})`);
+  console.log(
+    `Кончик пальца в (${Math.round(tipX * width)}, ${Math.round(tipY * height)}) px.\n` +
+      `  Впишите в defaultProps: gloveTipX: ${tipX.toFixed(3)}, gloveTipY: ${tipY.toFixed(3)}`,
+  );
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (args.hand) {
     if (!apiKey) throw new Error("Нет GEMINI_API_KEY в .env");
-    await generateHand(apiKey, args.model, args.force);
+    await generateHand(apiKey, args.model, args.force, args.pencil);
+    if (!args.comp) return;
+  }
+
+  if (args.glove) {
+    if (!apiKey) throw new Error("Нет GEMINI_API_KEY в .env");
+    await generateGlove(apiKey, args.model, args.force);
     if (!args.comp) return;
   }
 
@@ -132,6 +200,9 @@ async function main() {
     const png = path.join(artDir, `${item.id}.png`);
     const rel = path.posix.join("whiteboard/art", args.comp, `${item.id}.png`);
 
+    const style = item.style ?? "line";
+    const backdrop = item.backdrop ?? "paper";
+
     if (!existsSync(png) || args.force) {
       if (args.trace) {
         console.log(`⚠ ${item.id}: файла нет, а стоит --trace — пропускаю`);
@@ -139,7 +210,7 @@ async function main() {
       }
       if (!apiKey) throw new Error("Нет GEMINI_API_KEY в .env");
       process.stdout.write(`${item.id}: генерю… `);
-      const buf = await generateImage(artworkPrompt(item.subject), {
+      const buf = await generateImage(artworkPrompt(item.subject, { style, backdrop, accent: item.accent }), {
         apiKey,
         model: args.model,
         aspectRatio: item.aspect ?? "1:1",
@@ -150,15 +221,49 @@ async function main() {
       process.stdout.write(`${item.id}: есть, `);
     }
 
+    // Светлая кайма вокруг залитого фона ломает и трассировку (обводит рамку
+    // по периметру), и посадку по чернилам. У рисунка на бумаге режется всё
+    // поле разом: холст там кратно больше рисунка, и лишнее становится видимым
+    // прямоугольником на доске. Обе обрезки идемпотентны, поэтому гоняются на
+    // каждом прогоне, а не только после генерации.
+    if (style === "graphite") {
+      if (backdrop === "dark") {
+        const t = await trimLightBorder(png);
+        if (t.trimmed) process.stdout.write(`кайма срезана → ${t.width}×${t.height}, `);
+      } else {
+        const level = estimatePaperLevel(await readGrey(png));
+        const c = await cropToContent(png, level);
+        if (c.cropped) process.stdout.write(`поля срезаны → ${c.width}×${c.height}, `);
+      }
+    }
+
     const norm = path.join(workDir, `${item.id}-norm.png`);
-    const size = await normalizeArtwork(png, norm);
+    const size = await normalizeArtwork(png, norm, style);
+
+    // У картинки с залитым фоном содержимое — весь кадр: закрашивать надо и фон
+    // тоже. У рисунка на бумаге уровень бумаги снимается с углов кадра.
+    const grey = await readGrey(norm);
+    const paperLevel = backdrop === "dark" ? ALL_CONTENT : estimatePaperLevel(grey);
+
     let art: TracedArtwork;
     try {
-      art = await traceArtwork(norm);
+      art = await traceArtwork(norm, {
+        mode: style,
+        // Объект на залитом фоне СВЕТЛЫЙ, и обводить надо его, а не виньетку.
+        polarity: backdrop === "dark" ? "light-on-dark" : "dark-on-light",
+        paperLevel,
+      });
     } catch (err) {
       console.log(`✗ ${(err as Error).message}`);
       continue;
     }
+
+    const shade = style === "graphite" ? planShading(grey, { paperLevel }) : null;
+
+    // Бумагу — в прозрачность, чтобы рисунок лежал прямо на доске, а не на
+    // своём кремовом листе. Делается ПОСЛЕ трассировки: она читает
+    // нормализованную копию, где альфа всё равно сводится на белый.
+    if (style === "graphite" && backdrop === "paper") await keyPaperToAlpha(png, paperLevel);
 
     out.items[item.id] = {
       id: item.id,
@@ -169,10 +274,15 @@ async function main() {
       viewBox: art.viewBox,
       inkBox: art.inkBox,
       contours: art.contours.map((c) => ({ d: c.d, length: c.length, solid: c.solid })),
+      ...(shade ? { shading: shade.strokes, shadeWidth: shade.penWidth } : {}),
+      style,
       model: args.model,
       generatedAt: new Date().toISOString(),
     };
-    console.log(`контуров ${art.contours.length}, чернила ${Math.round(art.inkBox.w)}×${Math.round(art.inkBox.h)}`);
+    console.log(
+      `контуров ${art.contours.length}${shade ? `, строк растушёвки ${shade.strokes.length}` : ""}, ` +
+        `чернила ${Math.round(art.inkBox.w)}×${Math.round(art.inkBox.h)}`,
+    );
   }
 
   const file = path.join(artDir, "art.json");

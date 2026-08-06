@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import {
   AbsoluteFill,
+  Sequence,
   useCurrentFrame,
   useVideoConfig,
   interpolate,
@@ -39,7 +40,7 @@ import { handFamily, interFamily } from "../../lib/fonts";
  * Итого ≤3 вызова API на кадр на весь ролик, НЕЗАВИСИМО от числа контуров.
  */
 
-import type { Stroke, BoardElement, CameraMove } from "./types";
+import type { Stroke, BoardElement, CameraMove, ClickMove } from "./types";
 
 export type { Stroke, BoardElement } from "./types";
 
@@ -84,6 +85,18 @@ export type WhiteboardProps = {
   /** Кадр, с которого рука уходит за кадр. */
   exitFrom: number;
   exitFrames: number;
+
+  /**
+   * Клики мультяшной перчаткой по уже нарисованному (финальный «жми на
+   * колокольчик»). Пустой массив — ролик без кликов.
+   */
+  clicks: ClickMove[];
+  /** PNG перчатки внутри public/. Пусто — кликов не будет даже при clicks. */
+  gloveSrc: string;
+  gloveWidth: number;
+  /** Где кончик указательного пальца внутри картинки, доли 0…1. */
+  gloveTipX: number;
+  gloveTipY: number;
 };
 
 /** Активный штрих кадра: ровно один на весь ролик (см. правило 4 выше). */
@@ -199,6 +212,66 @@ const VectorMarker: React.FC<{ width: number; tilt: number }> = ({ width, tilt }
   </svg>
 );
 
+/** Насколько глубоко палец «продавливает» цель в момент нажатия, px доски. */
+const PRESS_DEPTH = 26;
+const PRESS_FRAMES = 7;
+/** Затухающее качание цели после нажатия. */
+const SHAKE_FRAMES = 22;
+const SHAKE_DEGREES = 7;
+
+/**
+ * Поза перчатки в этом кадре: подлёт снизу → нажатие → уход вниз.
+ *
+ * Всё считается от номера кадра, как и остальная доска. Точка `x/y` из
+ * манифеста — это место, куда встаёт КОНЧИК ПАЛЬЦА; смещение картинки под него
+ * делает сам рендер, ровно как у рисующей руки.
+ */
+const glovePose = (c: ClickMove, frame: number): { x: number; y: number; opacity: number } | null => {
+  if (frame < c.from) return null;
+
+  const approach = interpolate(frame, [c.from, c.press], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+  // Уход отсчитывается ОТ НАЖАТИЯ, а не от конца слота: слот длиной во фразу,
+  // и перчатка, дождавшись его конца, две секунды висела неподвижно — ровно
+  // тот застой, который ловит freezedetect. Нажал и убрал, как живой палец.
+  const leaveFrom = Math.min(c.press + PRESS_FRAMES + 8, c.to - 12);
+  const leave = interpolate(frame, [leaveFrom, leaveFrom + 12], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.in(Easing.cubic),
+  });
+  // Нажатие: палец коротко идёт вверх, в цель, и возвращается. Синус даёт
+  // ровно одно движение туда-обратно без отдельных ключей.
+  const pressT = interpolate(frame, [c.press, c.press + PRESS_FRAMES], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const push = Math.sin(pressT * Math.PI) * PRESS_DEPTH;
+
+  if (leave >= 1) return null; // ушла — узла в DOM нет
+  return {
+    x: c.x,
+    // Перчатка приходит снизу и туда же уходит: она не рисует, а «тыкает»,
+    // поэтому появляться из-за края естественнее, чем возникать на месте.
+    y: c.y + approach * 420 + leave * 420 - push,
+    opacity: Math.min(1 - approach * 0.6, 1 - leave),
+  };
+};
+
+/** Затухающее качание элемента, по которому щёлкнули. */
+const shakeFor = (clicks: ClickMove[], id: string, frame: number): number => {
+  for (const c of clicks) {
+    if (c.target !== id) continue;
+    const t = frame - c.press;
+    if (t < 0 || t > SHAKE_FRAMES) continue;
+    return Math.sin((t / SHAKE_FRAMES) * Math.PI * 3) * SHAKE_DEGREES * (1 - t / SHAKE_FRAMES);
+  }
+  return 0;
+};
+
 type Phase = "pending" | "drawing" | "done";
 
 /**
@@ -209,23 +282,26 @@ type Phase = "pending" | "drawing" | "done";
  * обводим, потом закрашиваем, как человек.
  */
 const strokePath = (s: Stroke, frame: number, key: string): React.ReactElement | null => {
+  // Своя толщина — у штрихов растушёвки: перо кладут плашмя, оно в разы шире
+  // обводочного. Атрибут на путь перебивает групповой strokeWidth.
+  const width = s.w === undefined ? undefined : s.w;
   // дорисован — без dash-атрибутов, ноль вызовов API
   if (frame >= s.from + s.frames) {
-    return <path key={key} d={s.d} fill={s.fill ? "currentColor" : "none"} />;
+    return <path key={key} d={s.d} strokeWidth={width} fill={s.fill ? "currentColor" : "none"} />;
   }
   // не начат — узла нет в DOM
   if (frame < s.from) return null;
   // ровно один такой путь на кадр во всём ролике
   const progress = Math.min(1, Math.max(0, (frame - s.from) / s.frames));
-  return <path key={key} d={s.d} {...evolvePath(progress, s.d)} />;
+  return <path key={key} d={s.d} strokeWidth={width} {...evolvePath(progress, s.d)} />;
 };
 
 /**
  * `phase` в пропах — не украшение: у дорисованного элемента пропы перестают
  * меняться, и React.memo выключает его перерисовку, хотя кадр тикает.
  */
-const ElementLayer: React.FC<{ el: BoardElement; frame: number; phase: Phase }> = React.memo(
-  ({ el, frame, phase }) => {
+const ElementLayer: React.FC<{ el: BoardElement; frame: number; phase: Phase; shake: number }> = React.memo(
+  ({ el, frame, phase, shake }) => {
     if (phase === "pending") return null;
 
     const common: React.CSSProperties = {
@@ -233,6 +309,13 @@ const ElementLayer: React.FC<{ el: BoardElement; frame: number; phase: Phase }> 
       left: el.box.x,
       top: el.box.y,
       overflow: "visible",
+      // Качание после клика перчаткой. Ноль в 99% кадров, и тогда transform не
+      // ставится вовсе — лишний слой композитинга элементу ни к чему.
+      // Ось качания — верх по центру: так качается всё, что «висит» (колокольчик
+      // на подвесе), и не разъезжается всё остальное.
+      ...(shake === 0
+        ? {}
+        : { transform: `rotate(${shake.toFixed(2)}deg)`, transformOrigin: "50% 0%" }),
     };
 
     if (el.render === "strokes") {
@@ -300,6 +383,19 @@ const ElementLayer: React.FC<{ el: BoardElement; frame: number; phase: Phase }> 
     // прозрачно-чёрное, то есть скрыто, поэтому фоновый прямоугольник не нужен.
     const maskId = `mask-${el.id}`;
     const [, , vw, vh] = el.viewBox.split(/\s+/).map(Number);
+
+    // Графит: дорисованный элемент показываем целиком. Обводка там берёт лишь
+    // несколько главных контуров, а растушёвка идёт полосами, так что по маске
+    // всегда остаются крохи — и они бы застряли невидимыми до конца ролика.
+    // Заодно из DOM уходит самый тяжёлый узел кадра.
+    if (el.revealAll && phase === "done") {
+      return (
+        <svg viewBox={el.viewBox} width={el.box.w} height={el.box.h} style={common}>
+          <image href={staticFile(el.src)} x={0} y={0} width={vw} height={vh} />
+        </svg>
+      );
+    }
+
     return (
       <svg viewBox={el.viewBox} width={el.box.w} height={el.box.h} style={common}>
         <defs>
@@ -409,6 +505,11 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   handWobbleAmp,
   exitFrom,
   exitFrames,
+  clicks,
+  gloveSrc,
+  gloveWidth,
+  gloveTipX,
+  gloveTipY,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
@@ -472,8 +573,38 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
           const last = el.strokes[el.strokes.length - 1];
           const phase: Phase =
             frame < first.from ? "pending" : frame >= last.from + last.frames ? "done" : "drawing";
-          return <ElementLayer key={el.id} el={el} frame={frame} phase={phase} />;
+          return (
+            <ElementLayer
+              key={el.id}
+              el={el}
+              frame={frame}
+              phase={phase}
+              shake={shakeFor(clicks, el.id, frame)}
+            />
+          );
         })}
+
+        {/* Перчатка живёт ВНУТРИ холста: точка нажатия задана в координатах
+            доски, и прокрутка камеры должна двигать её вместе с целью. */}
+        {gloveSrc === ""
+          ? null
+          : clicks.map((c) => {
+              const pose = glovePose(c, frame);
+              if (!pose) return null;
+              return (
+                <div
+                  key={`${c.target}-${c.from}`}
+                  style={{
+                    position: "absolute",
+                    left: pose.x - gloveTipX * gloveWidth,
+                    top: pose.y - gloveTipY * gloveWidth,
+                    opacity: pose.opacity,
+                  }}
+                >
+                  <Img src={staticFile(gloveSrc)} style={{ width: gloveWidth, display: "block" }} />
+                </div>
+              );
+            })}
 
         {pen && exitProgress < 1 ? (
           <Hand
@@ -493,6 +624,16 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       </div>
 
       {narrationFile === "" ? null : <Audio src={staticFile(narrationFile)} />}
+
+      {/* Звон по нажатию. Через Sequence, а не через startFrom: нам нужно,
+          чтобы звук НАЧАЛСЯ на кадре нажатия, а не проигрывался со смещением. */}
+      {clicks.map((c) =>
+        c.sfx === "" ? null : (
+          <Sequence key={`sfx-${c.press}`} from={c.press} durationInFrames={durationInFrames - c.press}>
+            <Audio src={staticFile(c.sfx)} />
+          </Sequence>
+        ),
+      )}
       {musicSrc === "" ? null : (
         <Audio
           src={staticFile(musicSrc)}

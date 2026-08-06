@@ -41,6 +41,14 @@ export const whiteboardSchema = z.object({
   /** Размах подёргивания, px на доске. Ниже ~15 на кадре 1080 не видно. */
   handWobbleAmp: z.number().min(0).max(160),
 
+  // ─── перчатка-курсор (финальный клик) ────────────────────────────────
+  /** Путь внутри public/. Пустая строка → кликов не будет. */
+  gloveSrc: z.string(),
+  gloveWidth: z.number().min(80).max(900),
+  /** Где кончик указательного пальца внутри картинки, доли 0…1. */
+  gloveTipX: z.number().min(0).max(1),
+  gloveTipY: z.number().min(0).max(1),
+
   // ─── звук ────────────────────────────────────────────────────────────
   /** Пустая строка → без музыки. */
   musicSrc: z.string(),
@@ -52,6 +60,7 @@ export const whiteboardSchema = z.object({
   narrationFile: z.string(),
   elements: z.array(z.any()),
   camera: z.array(z.any()),
+  clicks: z.array(z.any()),
   board: z.object({
     width: z.number(),
     height: z.number(),
