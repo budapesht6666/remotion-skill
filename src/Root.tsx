@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Composition, staticFile } from "remotion";
+import { Composition, staticFile, type CalculateMetadataFunction } from "remotion";
 import { FORMAT, seconds } from "./lib/format";
 import { KineticText } from "./compositions/KineticText/KineticText";
 import { CaptionedVideo } from "./compositions/CaptionedVideo/CaptionedVideo";
@@ -24,8 +24,34 @@ import {
   type Phrase as StethamPhrase,
 } from "./compositions/StethamTales/StethamTales";
 import { Whiteboard } from "./compositions/Whiteboard/Whiteboard";
-import { whiteboardSchema } from "./compositions/Whiteboard/schema";
+import { whiteboardSchema, type WhiteboardSchema } from "./compositions/Whiteboard/schema";
 import type { BoardManifest as WhiteboardManifest } from "./compositions/Whiteboard/types";
+
+/**
+ * Общий загрузчик доски для всех композиций на рецепте Whiteboard: контуры
+ * трассировки слишком объёмные, чтобы держать их в реестре, поэтому они
+ * приезжают из board.json. Какого именно ролика — говорит проп `boardFile`.
+ */
+const loadBoard: CalculateMetadataFunction<WhiteboardSchema> = async ({ props }) => {
+  const res = await fetch(staticFile(props.boardFile));
+  if (!res.ok) {
+    // Доска ещё не скомпилирована — композиция должна открываться в студии.
+    return { durationInFrames: seconds(1), props };
+  }
+  const manifest = (await res.json()) as WhiteboardManifest;
+  return {
+    durationInFrames: Math.max(manifest.durationInFrames, 1),
+    props: {
+      ...props,
+      elements: manifest.elements,
+      camera: manifest.camera,
+      board: manifest.board,
+      narrationFile: manifest.narrationFile,
+      exitFrom: manifest.hand.exitFrom,
+      exitFrames: manifest.hand.exitFrames,
+    },
+  };
+};
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -371,6 +397,7 @@ const opacity = interpolate(
         // намеренно записаны литералами, даже там, где просился FORMAT.
         defaultProps={{
           paper: "#fbfbf7",
+          boardFile: "clips/Whiteboard/board.json",
           handSrc: "whiteboard/hand/right-marker.png",
           handWidth: 620,
           handTipX: 0.282,
@@ -398,26 +425,46 @@ const opacity = interpolate(
           camera: [],
           board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
         }}
-        calculateMetadata={async ({ props }) => {
-          const res = await fetch(staticFile("clips/Whiteboard/board.json"));
-          if (!res.ok) {
-            // Доска ещё не скомпилирована — композиция должна открываться в студии.
-            return { durationInFrames: seconds(1), props };
-          }
-          const manifest = (await res.json()) as WhiteboardManifest;
-          return {
-            durationInFrames: Math.max(manifest.durationInFrames, 1),
-            props: {
-              ...props,
-              elements: manifest.elements,
-              camera: manifest.camera,
-              board: manifest.board,
-              narrationFile: manifest.narrationFile,
-              exitFrom: manifest.hand.exitFrom,
-              exitFrames: manifest.hand.exitFrames,
-            },
-          };
+        calculateMetadata={loadBoard}
+      />
+
+      {/*
+        Тот же рецепт доски на другом материале: англоязычный ролик про то, как
+        брошенная ступень Falcon 9 пробила новый кратер в Луне (05.08.2026).
+        Композиция отличается от Whiteboard ровно тремя вещами — своей папкой
+        с иллюстрациями, своей озвучкой и своим board.json; компонент, схема и
+        скрипты пайплайна общие.
+      */}
+      <Composition
+        id="MoonScar"
+        component={Whiteboard}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        schema={whiteboardSchema}
+        // Те же правила, что и у Whiteboard выше: в defaultProps только литералы.
+        defaultProps={{
+          paper: "#fbfbf7",
+          boardFile: "clips/MoonScar/board.json",
+          handSrc: "whiteboard/hand/right-marker.png",
+          handWidth: 620,
+          handTipX: 0.282,
+          handTipY: 0.454,
+          handFlip: false,
+          handTilt: 0,
+          handWobbleFrames: 7,
+          handWobbleAmp: 15,
+          musicSrc: "moonscar-music.mp3",
+          musicVolume: 0.085,
+          exitFrom: 0,
+          exitFrames: 22,
+          narrationFile: "",
+          elements: [],
+          camera: [],
+          board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
         }}
+        calculateMetadata={loadBoard}
       />
     </>
   );

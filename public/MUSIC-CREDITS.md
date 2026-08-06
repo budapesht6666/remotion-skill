@@ -17,6 +17,26 @@ Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
 
+## moonscar-music.mp3 — используется в композиции `MoonScar`
+
+- **Трек:** «Echoes of Time v2»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Echoes%20of%20Time%20v2.mp3
+
+Просторный тревожный эмбиент с ровным пульсом: ролик — обвинение, собранное из
+фактов, и музыка должна держать напряжение, не комментируя его. Громкость 0.085,
+как у `whiteboard-music.mp3` — под доской нет оригинальной дорожки, которая
+маскировала бы музыку, поэтому она заметно тише обычного.
+
+Строка атрибуции для описания ролика (CC BY **требует** её при публикации):
+
+```
+Music: "Echoes of Time v2" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
 ## tunnel-music.mp3 — используется в композиции `TunnelRush`
 
 - **Трек:** «Space Fighter Loop»
