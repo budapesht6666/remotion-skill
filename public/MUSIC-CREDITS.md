@@ -1,5 +1,22 @@
 # Музыка в public/ — атрибуция
 
+## whiteboard-music.mp3 — используется в композиции `Whiteboard`
+
+- **Трек:** «Wallpaper»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Wallpaper.mp3
+
+Спокойный лёгкий трек: под доской музыка держит темп, но не спорит с закадровым
+голосом. Громкость в композиции 0.085 — заметно тише, чем в роликах на кадрах
+фильма, потому что здесь нет оригинальной дорожки, которая маскировала бы её.
+
+```
+Music: "Wallpaper" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
 ## tunnel-music.mp3 — используется в композиции `TunnelRush`
 
 - **Трек:** «Space Fighter Loop»

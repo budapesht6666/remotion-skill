@@ -22,23 +22,32 @@
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
     "vo": "tsx scripts/voice-over.ts",
-    "dict": "tsx scripts/pronunciation.ts"
+    "dict": "tsx scripts/pronunciation.ts",
+    "art": "tsx scripts/prepare-art.ts",
+    "board": "tsx scripts/compile-board.ts"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",
+    "@remotion/animation-utils": "4.0.498",
     "@remotion/captions": "4.0.498",
     "@remotion/cli": "4.0.498",
     "@remotion/google-fonts": "4.0.498",
+    "@remotion/media-utils": "4.0.498",
+    "@remotion/paths": "4.0.498",
+    "@remotion/rough-notation": "4.0.498",
     "@remotion/tailwind-v4": "4.0.498",
     "@remotion/three": "^4.0.498",
     "@types/three": "^0.185.1",
     "cannon-es": "^0.20.0",
     "pixi.js": "^8.6.0",
+    "potrace": "2.1.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.498",
+    "sharp": "0.35.3",
     "tailwindcss": "4.0.0",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.498",

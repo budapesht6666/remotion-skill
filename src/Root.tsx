@@ -23,6 +23,9 @@ import {
   type Clip as StethamClip,
   type Phrase as StethamPhrase,
 } from "./compositions/StethamTales/StethamTales";
+import { Whiteboard } from "./compositions/Whiteboard/Whiteboard";
+import { whiteboardSchema } from "./compositions/Whiteboard/schema";
+import type { BoardManifest as WhiteboardManifest } from "./compositions/Whiteboard/types";
 
 /**
  * Реестр композиций. Каждая — самостоятельный «рецепт» под свой тип ролика.
@@ -343,6 +346,75 @@ const opacity = interpolate(
               clips: manifest.clips,
               phrases: manifest.phrases,
               narrationFile: manifest.narrationFile,
+            },
+          };
+        }}
+      />
+
+      {/*
+        Доска VideoScribe/Doodly. Растровый line-art проявляется через маску,
+        штрихи которой обводят контуры рисунка (potrace, scripts/lib/artwork.ts),
+        и по ним же едет рука. Данные приезжают из board.json — контуры
+        трассировки слишком объёмные, чтобы держать их в реестре.
+      */}
+      <Composition
+        id="Whiteboard"
+        component={Whiteboard}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        schema={whiteboardSchema}
+        // ВНИМАНИЕ: ни приведений типов (`as`), ни ссылок на константы, ни
+        // арифметики внутри defaultProps. Всё это глушит редактор пропсов в
+        // студии — правая панель просто перестаёт его показывать. Числа здесь
+        // намеренно записаны литералами, даже там, где просился FORMAT.
+        defaultProps={{
+          paper: "#fbfbf7",
+          handSrc: "whiteboard/hand/right-marker.png",
+          handWidth: 620,
+          handTipX: 0.282,
+          handTipY: 0.454,
+          handFlip: false,
+          handTilt: 0,
+          // Подёргивание кисти при письме — свойство РУКИ, а не текста: период
+          // в кадрах, размах в пикселях доски, поэтому они одинаковы для любой
+          // надписи, любого кегля и любой скорости появления. Скорость самого
+          // текста задаётся отдельно — длительностью фразы.
+          //
+          // Подобрано ползунками в студии. Эллипс 15×6.75 px за 7 кадров даёт
+          // ~14.4 px/кадр против 4.3 без подёргивания: рука заметно работает,
+          // но не размахивает. Для сравнения, на иллюстрациях перо идёт
+          // 148–275 px/кадр — полностью догонять рисунок и не надо, письмо
+          // физически медленнее размашистой обводки контура.
+          handWobbleFrames: 7,
+          handWobbleAmp: 15,
+          musicSrc: "whiteboard-music.mp3",
+          musicVolume: 0.085,
+          exitFrom: 0,
+          exitFrames: 22,
+          narrationFile: "",
+          elements: [],
+          camera: [],
+          board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile("clips/Whiteboard/board.json"));
+          if (!res.ok) {
+            // Доска ещё не скомпилирована — композиция должна открываться в студии.
+            return { durationInFrames: seconds(1), props };
+          }
+          const manifest = (await res.json()) as WhiteboardManifest;
+          return {
+            durationInFrames: Math.max(manifest.durationInFrames, 1),
+            props: {
+              ...props,
+              elements: manifest.elements,
+              camera: manifest.camera,
+              board: manifest.board,
+              narrationFile: manifest.narrationFile,
+              exitFrom: manifest.hand.exitFrom,
+              exitFrames: manifest.hand.exitFrames,
             },
           };
         }}
