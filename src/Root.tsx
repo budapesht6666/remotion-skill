@@ -26,6 +26,9 @@ import {
 import { Whiteboard } from "./compositions/Whiteboard/Whiteboard";
 import { whiteboardSchema, type WhiteboardSchema } from "./compositions/Whiteboard/schema";
 import type { BoardManifest as WhiteboardManifest } from "./compositions/Whiteboard/types";
+import { DiverBotAd } from "./compositions/DiverBotAd/DiverBotAd";
+import { diverBotAdSchema, type DiverBotAdSchema } from "./compositions/DiverBotAd/schema";
+import type { AdManifest } from "./compositions/DiverBotAd/types";
 
 /**
  * Общий загрузчик доски для всех композиций на рецепте Whiteboard: контуры
@@ -51,6 +54,29 @@ const loadBoard: CalculateMetadataFunction<WhiteboardSchema> = async ({ props })
       narrationFile: manifest.narrationFile,
       exitFrom: manifest.hand.exitFrom,
       exitFrames: manifest.hand.exitFrames,
+    },
+  };
+};
+
+/**
+ * Таймлайн рекламного ролика приезжает из ad.json: там уже склеена речь и
+ * посчитаны границы планов в кадрах. Длительность композиции — оттуда же,
+ * поэтому переозвучка меняет хронометраж сама, без правок в реестре.
+ */
+const loadAd: CalculateMetadataFunction<DiverBotAdSchema> = async ({ props }) => {
+  const res = await fetch(staticFile(props.adFile));
+  if (!res.ok) {
+    // Таймлайн ещё не собран — композиция обязана открываться в студии.
+    return { durationInFrames: seconds(1), props };
+  }
+  const manifest = (await res.json()) as AdManifest;
+  return {
+    durationInFrames: Math.max(manifest.durationInFrames, 1),
+    props: {
+      ...props,
+      narrationFile: manifest.narrationFile,
+      phrases: manifest.phrases,
+      shots: manifest.shots,
     },
   };
 };
@@ -525,6 +551,39 @@ const opacity = interpolate(
           board: { width: 1080, height: 1920, screens: 1, screenStep: 1560 },
         }}
         calculateMetadata={loadBoard}
+      />
+
+      {/*
+        Реклама продукта на его же материале: промо-видео сайта, живой захват
+        мини-аппки и настоящая анимация цены и RSI с промо-страницы. Ролик
+        строится на смене палитры — тёмная половина про пропущенное движение,
+        светлая про продукт, — и музыка ломается ровно на вспышке.
+      */}
+      <Composition
+        id="DiverBotAd"
+        component={DiverBotAd}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        schema={diverBotAdSchema}
+        // Как и у доски: в defaultProps только литералы, иначе панель пропсов
+        // в студии молча пропадает.
+        defaultProps={{
+          adFile: "vo/DiverBotAd/ad.json",
+          musicDark: "diverbot-dark.mp3",
+          musicLight: "diverbot-light.mp3",
+          musicDarkVolume: 0.16,
+          musicLightVolume: 0.11,
+          alertVolume: 0.5,
+          dropVolume: 0.35,
+          tickVolume: 0.28,
+          showCaptions: true,
+          narrationFile: "",
+          phrases: [],
+          shots: [],
+        }}
+        calculateMetadata={loadAd}
       />
     </>
   );

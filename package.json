@@ -17,6 +17,10 @@
     "sheet": "tsx scripts/contact-sheet.ts",
     "cut": "tsx scripts/cut-clips.ts",
     "broll": "tsx scripts/cut-broll.ts",
+    "capture": "tsx scripts/capture-diverbot.ts",
+    "ad": "tsx scripts/build-ad.ts",
+    "refs": "tsx scripts/gen-refs.ts",
+    "unmark": "tsx scripts/unmark-clips.ts",
     "bake": "tsx scripts/bake-physics.ts",
     "flight": "tsx scripts/check-flight.ts",
     "upgrade": "remotion upgrade",
@@ -56,6 +60,7 @@
     "dotenv": "^16.4.7",
     "eslint": "9.19.0",
     "prettier": "3.8.1",
+    "puppeteer-core": "^25.6.0",
     "tsx": "^4.19.2",
     "typescript": "5.9.3"
   },
