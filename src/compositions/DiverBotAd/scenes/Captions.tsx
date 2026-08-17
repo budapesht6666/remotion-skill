@@ -21,13 +21,20 @@ import type { AdPhrase } from "../types";
  * Цвет ведётся снаружи (`dark`): половины ролика противоположны по фону, и
  * субтитр обязан переключиться вместе с ними.
  */
-export const Captions: React.FC<{ phrases: AdPhrase[]; dark: boolean }> = ({ phrases, dark }) => {
+export const Captions: React.FC<{ phrases: AdPhrase[]; dark: boolean; offFor: string[] }> = ({
+  phrases,
+  dark,
+  offFor,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const time = frame / fps;
 
   const current = phrases.find((p) => time >= p.start - 0.12 && time <= p.end + 0.28);
   if (!current) return null;
+  // Отдельные фразы намеренно остаются без субтитра — см. `captionsOffFor`
+  // в schema.ts. Гасим строку, а не саму речь: голос всё проговаривает.
+  if (offFor.includes(current.id)) return null;
 
   const spoken = dark ? "rgba(255, 255, 255, 0.97)" : BRAND.ink;
   const pending = dark ? "rgba(255, 255, 255, 0.42)" : "rgba(10, 10, 11, 0.34)";
@@ -37,7 +44,10 @@ export const Captions: React.FC<{ phrases: AdPhrase[]; dark: boolean }> = ({ phr
       style={{
         justifyContent: "flex-end",
         alignItems: "center",
-        paddingBottom: 268,
+        // Нижние ~20 % кадра забирает себе интерфейс Shorts: заголовок, @хендл,
+        // строка описания. Субтитр, посаженный туда, читается в студии и
+        // пропадает в ленте — то есть ровно там, где он единственный канал.
+        paddingBottom: 470,
         paddingLeft: 96,
         paddingRight: 96,
       }}
@@ -48,7 +58,9 @@ export const Captions: React.FC<{ phrases: AdPhrase[]; dark: boolean }> = ({ phr
           flexWrap: "wrap",
           justifyContent: "center",
           gap: "0 14px",
-          maxWidth: 880,
+          // Уже прежних 880: правее ~940 px идёт колонка кнопок лайк/коммент,
+          // и центрованная строка на всю ширину задевала бы её краем.
+          maxWidth: 800,
           textAlign: "center",
           fontFamily: BRAND_FONT,
           fontWeight: WEIGHT.medium,

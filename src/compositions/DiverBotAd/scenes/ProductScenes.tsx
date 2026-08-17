@@ -157,13 +157,18 @@ export const TelegramScene: React.FC = () => {
 };
 
 /**
- * Оффер. Карточка повторяет секцию цен промо-сайта, включая её главное правило:
- * **сумма подписки не анимируется**. Цитата из дизайн-системы продукта —
- * «цена — обещание, а не эффект»: счётчик, набегающий до десяти долларов,
- * превратил бы обещание в аттракцион.
+ * Оффер. Карточка повторяет секцию цен промо-сайта, но **без самой суммы**.
  *
- * Второй план этого бита подсвечивает строку про три бесплатных дня — под
- * фразу «Not finding out later. First three days free».
+ * Почему цены нет. На сайте она уместна: туда приходят читать условия. В
+ * шортсе цифра платного финансового сервиса стоит на экране шесть секунд перед
+ * холодной аудиторией — это лишний повод для ограничений площадки, а решение
+ * зритель всё равно принимает не по ней, а по «первые три дня бесплатно».
+ * Поэтому карточка ведёт пробным периодом, а сумма ждёт зрителя в боте.
+ *
+ * Дизайн-система продукта требовала, чтобы сумма не анимировалась («цена —
+ * обещание, а не эффект»). Строка пробного периода унаследовала это правило:
+ * она не набегает и не выезжает, а только подсвечивается — под фразу «Not
+ * finding out later. First three days free» на втором плане бита.
  */
 export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlightFrom }) => {
   const frame = useCurrentFrame();
@@ -175,7 +180,7 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
   });
   // Подсветка приходит внутри того же плана, когда диктор доходит до трёх
   // бесплатных дней. План один на обе фразы намеренно: разбей его надвое —
-  // и карточка размонтируется, проиграв вход заново посреди цены.
+  // и карточка размонтируется, проиграв вход заново посреди оффера.
   const glow =
     highlightFrom === null
       ? 0
@@ -186,9 +191,8 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
         });
 
   // Оффер — самый длинный план ролика (шесть секунд) и стоит там, где зритель
-  // решает, досматривать ли. Медленный наезд не трогает саму цену: правило
-  // «сумма подписки не анимируется» про счётчик, набегающий до десяти, а не
-  // про камеру.
+  // решает, досматривать ли. Наезд общий и очень медленный: он оживляет кадр,
+  // но не трогает содержимое карточки построчно.
   const push = interpolate(frame, [0, 186], [1, 1.035], {
     extrapolateRight: "clamp",
     easing: Easing.bezier(...EASE_OUT),
@@ -232,29 +236,13 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
           Subscription
         </div>
 
-        <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 16 }}>
-          <span
-            style={{
-              fontFamily: BRAND_FONT,
-              fontWeight: WEIGHT.light,
-              fontSize: 108,
-              letterSpacing: TRACKING.display,
-              color: BRAND.ink,
-            }}
-          >
-            ${PRODUCT.priceUsd}
-          </span>
-          <span
-            style={{
-              fontFamily: BRAND_FONT,
-              fontWeight: WEIGHT.regular,
-              fontSize: TYPE.lead,
-              color: BRAND.textMuted,
-            }}
-          >
-            / {PRODUCT.subscriptionDays} days
-          </span>
-        </div>
+        {/* Суммы на экране нет намеренно. Ролик уезжает на площадку, где
+            демонстрация цены платного финансового сервиса — лишний повод для
+            ограничений, а конверсию она здесь всё равно не делает: решение
+            принимается на «первые три дня бесплатно», и до цены зритель
+            доходит уже в боте. Карточку это не ломает — она держится рамкой,
+            надзаголовком и строкой пробного периода, которая занимает
+            освободившееся место сверху. */}
 
         {/* Подложка растёт вместе с подсветкой, а не появляется скачком:
             смена padding по булеву флагу дёрнула бы строку на 20 px в тот
@@ -264,7 +252,7 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
             display: "flex",
             alignItems: "center",
             gap: 14,
-            marginTop: 18,
+            marginTop: 26,
             padding: `${14 * glow}px ${20 * glow}px`,
             marginLeft: -20 * glow,
             borderRadius: RADIUS.sm,
@@ -272,11 +260,13 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
           }}
         >
           <Check />
+          {/* Кегль на ступень выше остальных строк: убрав сумму, карточка
+              осталась без якоря, и эта строка занимает его место. */}
           <span
             style={{
               fontFamily: BRAND_FONT,
               fontWeight: WEIGHT.semibold,
-              fontSize: TYPE.body,
+              fontSize: TYPE.lead,
               color: BRAND.ink,
             }}
           >

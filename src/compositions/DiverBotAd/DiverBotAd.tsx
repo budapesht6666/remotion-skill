@@ -13,6 +13,7 @@ import type { DiverBotAdSchema } from "./schema";
 import type { AdPhrase, AdShot } from "./types";
 import { Captions } from "./scenes/Captions";
 import { DarkScene, FlashScene } from "./scenes/DarkScenes";
+import { Hook } from "./scenes/Hook";
 import { AppScene, ChartScene, HeroScene } from "./scenes/LightScenes";
 import { ChartWallScene, EventGridScene } from "./scenes/NativeScenes";
 import { EndCard, OfferScene, TelegramScene } from "./scenes/ProductScenes";
@@ -48,6 +49,9 @@ export const DiverBotAd: React.FC<DiverBotAdSchema> = ({
   dropVolume,
   tickVolume,
   showCaptions,
+  captionsOffFor,
+  hookLines,
+  hookFrames,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -60,11 +64,15 @@ export const DiverBotAd: React.FC<DiverBotAdSchema> = ({
   const flash = list.find((s) => s.scene === "flash");
   const flashFrame = flash ? flash.startFrame : 0;
 
-  // Тёмный мир кончается не на границе плана, а на четвёртом кадре вспышки —
-  // там, где фон уже стал белым. Считать по сцене нельзя: вспышка формально
+  // Тёмный мир кончается не на границе плана, а на седьмом кадре вспышки —
+  // там, где фон уже почти стал белым. Считать по сцене нельзя: вспышка формально
   // «тёмный» план, и субтитр остался бы белым по белому почти на полторы
   // секунды, то есть исчез бы ровно на повороте ролика.
-  const dark = frame < flashFrame + 4;
+  //
+  // Порог ходит вместе с длиной выбеливания в `FlashScene` (сейчас 9 кадров):
+  // переключить субтитр раньше — белые буквы на ещё тёмном поле, позже — на уже
+  // белом. Меняете там — правьте здесь.
+  const dark = frame < flashFrame + 7;
 
   return (
     <AbsoluteFill style={{ backgroundColor: dark ? BRAND.darkPaper : BRAND.paper }}>
@@ -79,7 +87,12 @@ export const DiverBotAd: React.FC<DiverBotAdSchema> = ({
         </Sequence>
       ))}
 
-      {showCaptions ? <Captions phrases={lines} dark={dark} /> : null}
+      {/* Хук лежит поверх планов, но под субтитром: они разведены по кадру
+          (верхняя треть против нижней), и спорить им не за что. Живёт вне
+          секвенций — ему нужен абсолютный кадр ролика, а не локальный. */}
+      <Hook lines={hookLines} durationInFrames={hookFrames} />
+
+      {showCaptions ? <Captions phrases={lines} dark={dark} offFor={captionsOffFor} /> : null}
 
       {/* ─── Звук ─────────────────────────────────────────────────────────
           Речь идёт одной непрерывной дорожкой: она склеена на сборке, поэтому

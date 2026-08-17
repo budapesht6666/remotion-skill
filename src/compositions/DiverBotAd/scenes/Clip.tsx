@@ -167,13 +167,19 @@ export const NativeCandles: React.FC<{
 /**
  * Единый холод тёмной половины. Клипы из Gemini приедут разной температуры, и
  * без общего тонирующего слоя они рассыплются на набор чужих друг другу кадров.
+ *
+ * Сила подобрана под телефон, а не под монитор. На первой версии грейд стоял
+ * 0.42 при виньетке 0.72, и открывающий кадр — расфокусированное макро часов —
+ * уходил в почти чёрное поле: в ленте при дневном свете это читается как «видео
+ * не загрузилось», то есть как повод смахнуть на первой же секунде. Ночь должна
+ * остаться ночью, но подложка обязана быть различима.
  */
 export const NightGrade: React.FC = () => (
   <>
-    <AbsoluteFill style={{ backgroundColor: BRAND.darkTint, opacity: 0.42, mixBlendMode: "color" }} />
+    <AbsoluteFill style={{ backgroundColor: BRAND.darkTint, opacity: 0.34, mixBlendMode: "color" }} />
     <AbsoluteFill
       style={{
-        background: `radial-gradient(72% 52% at 50% 42%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.72) 100%)`,
+        background: `radial-gradient(72% 52% at 50% 42%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.58) 100%)`,
       }}
     />
   </>

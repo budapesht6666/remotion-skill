@@ -571,6 +571,62 @@ const opacity = interpolate(
         // в студии молча пропадает.
         defaultProps={{
           adFile: "vo/DiverBotAd/ad.json",
+          // ОБЕ половины на новых треках — и это вынужденно, а не для красоты.
+          // Реплика про оффер осталась прежней (переозвучка упёрлась в квоту),
+          // поэтому дорожка речи у этого монтажа совпадает с уже опубликованным
+          // роликом секунда в секунду. Совпадения площадка ищет перцептивным
+          // отпечатком, где аудио весит больше видео, так что развести две
+          // публикации здесь может только музыка — значит, меняем её целиком.
+          //
+          // Треки подобраны замером полос, а не по названию. «Long Note Two»:
+          // low −27.5 / high −71.5 дБ против −32.9 / −63.6 у прежней «Ossuary 6
+          // - Air» — та же разреженная тревога, но громче в низах, отсюда
+          // пониженная громкость. «Newer Wave»: −16.1 / −25.8 против −17.4 /
+          // −28.5 у «Digital Lemonade» — та же яркость и ровность под голосом.
+          musicDark: "diverbot-dark-2.mp3",
+          musicLight: "diverbot-light-2.mp3",
+          musicDarkVolume: 0.11,
+          musicLightVolume: 0.1,
+          alertVolume: 0.5,
+          dropVolume: 0.35,
+          tickVolume: 0.28,
+          showCaptions: true,
+          captionsOffFor: ["n12"],
+          hookLines: ["ETH moved at 3:14 AM.", "You slept."],
+          hookFrames: 72,
+          narrationFile: "",
+          phrases: [],
+          shots: [],
+        }}
+        calculateMetadata={loadAd}
+      />
+
+      {/*
+        Второй монтаж той же рекламы. Отдельная композиция, а не правка первой:
+        путь к манифесту развязан пропом `adFile` — тем же приёмом, которым
+        `MoonScar` переиспользует компонент `Whiteboard`, — поэтому оба ролика
+        воспроизводимы одновременно и ни один не затирает другой.
+
+        Чем отличается от `DiverBotAd`: открывается не часами, а падающей
+        свечой, тёмная половина короче на один план, снята реплика про завтрак,
+        свой хук и своя музыка. Это нужно не ради разнообразия — два почти
+        одинаковых ролика на одном канале площадка считает дублем и режет охват
+        второму.
+      */}
+      <Composition
+        id="DiverBotAdCut"
+        component={DiverBotAd}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        schema={diverBotAdSchema}
+        defaultProps={{
+          adFile: "vo/DiverBotAdCut/ad.json",
+          // Здесь остаётся исходная пара треков, и новые не нужны: у этого
+          // монтажа снята целая реплика, поэтому речь идёт другой длиной и все
+          // границы после третьей секунды разъезжаются сами. От основного
+          // ролика он отличается музыкой ровно потому, что тот ушёл на новую.
           musicDark: "diverbot-dark.mp3",
           musicLight: "diverbot-light.mp3",
           musicDarkVolume: 0.16,
@@ -579,6 +635,9 @@ const opacity = interpolate(
           dropVolume: 0.35,
           tickVolume: 0.28,
           showCaptions: true,
+          captionsOffFor: ["n12"],
+          hookLines: ["This candle printed", "while you slept."],
+          hookFrames: 72,
           narrationFile: "",
           phrases: [],
           shots: [],
