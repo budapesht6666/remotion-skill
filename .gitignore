@@ -26,3 +26,6 @@ whisper.cpp
 .agents/
 .claude/skills/mediabunny
 .claude/skills/remotion-*
+
+# Личные материалы пользователя (исходники съёмок и т.п.) — не коммитим.
+me/
