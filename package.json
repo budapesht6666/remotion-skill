@@ -30,7 +30,8 @@
     "art": "tsx scripts/prepare-art.ts",
     "board": "tsx scripts/compile-board.ts",
     "pan": "tsx scripts/pan-preview.ts",
-    "track": "tsx scripts/track-faces.ts"
+    "track": "tsx scripts/track-faces.ts",
+    "joins": "tsx scripts/check-joins.ts"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",

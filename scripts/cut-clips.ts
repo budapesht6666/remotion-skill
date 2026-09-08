@@ -111,11 +111,24 @@ const VO_TAIL = 0.35;
  * Траектория задана точками «доля ширины кадра», между ними идёт линейная
  * интерполяция, поэтому выражение — вложенные if по времени. Крайние значения
  * зажимаются, чтобы окно не вышло за кадр.
+ *
+ * ПЕРЕБРОС ОКНА НА СКЛЕЙКЕ — НЕ ИНТЕРПОЛЯЦИЯ. Смена плана записана в траектории
+ * парой точек с зазором в сотую долю секунды (конец плана и начало следующего).
+ * Если такую пару интерполировать, кадр, чьё время попало в зазор, получает
+ * положение окна ГДЕ-ТО МЕЖДУ двумя планами — на экране это один кадр с чужим
+ * кадрированием: голова у самого края, полкадра стены. При частой восьмёрке
+ * такие кадры идут через каждые полсекунды и читаются как мигание.
+ *
+ * Поэтому пара точек короче полутора кадров считается ступенькой: до порога
+ * держится старое значение, после — сразу новое, без промежуточных. Порог
+ * сдвинут на полкадра назад: время склейки в траектории округлено до сотых, и
+ * без сдвига первый кадр нового плана иногда оставался кадрирован по-старому.
  */
 function panExpression(
   points: { t: number; x: number }[],
   srcWidth: number,
   winWidth: number,
+  fps: number,
 ): string {
   const maxX = Math.max(0, srcWidth - winWidth);
   const at = (x: number) =>
@@ -123,12 +136,20 @@ function panExpression(
   if (points.length === 0) return String(Math.round(maxX / 2));
   if (points.length === 1) return String(at(points[0].x));
 
+  const frame = 1 / fps;
   let expr = String(at(points[points.length - 1].x));
   for (let i = points.length - 2; i >= 0; i--) {
     const a = points[i];
     const b = points[i + 1];
-    const dt = Math.max(0.001, b.t - a.t);
+    const dt = b.t - a.t;
     const from = at(a.x);
+    if (dt <= 1.5 * frame) {
+      // Мгновенный переброс на склейке: держим старое значение до середины
+      // предыдущего кадра, дальше действует уже следующая ветка выражения.
+      const edge = Math.max(0, b.t - 0.5 * frame);
+      expr = `if(lt(t,${edge.toFixed(4)}),${from},${expr})`;
+      continue;
+    }
     const delta = at(b.x) - from;
     const segment = `(${from}+(${delta})*(t-${a.t.toFixed(2)})/${dt.toFixed(3)})`;
     expr = `if(lt(t,${b.t.toFixed(2)}),${segment},${expr})`;
@@ -311,7 +332,7 @@ async function main() {
     const stageHeight = Math.round((FORMAT.height * zoom) / 2) * 2;
     const stageWidth = Math.round((srcWidth * stageHeight) / srcHeight / 2) * 2;
     const points = beat.pan ?? tracks[beat.id]?.pan ?? [];
-    const xExpr = panExpression(points, stageWidth, FORMAT.width);
+    const xExpr = panExpression(points, stageWidth, FORMAT.width, fps);
 
     const videoFilter = [
       // Денойз до апскейла: иначе увеличение вытягивает шум рипа вместе с
