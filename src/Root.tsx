@@ -15,6 +15,7 @@ import { TunnelRush } from "./compositions/TunnelRush/TunnelRush";
 import { JuniorKumite, type Clip } from "./compositions/JuniorKumite/JuniorKumite";
 import { ValleyAuction, type Clip as ValleyClip } from "./compositions/ValleyAuction/ValleyAuction";
 import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
+import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -319,6 +320,41 @@ const opacity = interpolate(
           showCaptions: true,
           videoScale: 1,
           // Кадр чуть выше центра: под ним живёт субтитр, и так они не спорят.
+          videoShiftY: -70,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: «стань мудаком» — сцена s01e02 «The Cap Table» с
+          оригинальным звуком. Второй монтаж на компоненте ValleyAuction:
+          развязка через проп `clipsFile`, поэтому на рецепте живёт сколько
+          угодно нарезок — у каждой своя папка public/clips/<Композиция>/ и
+          свой script.ts. Сборка: `npm run track -- ValleyAsshole` →
+          `npm run cut -- ValleyAsshole`. */}
+      <Composition
+        id="ValleyAsshole"
+        component={ValleyAuction}
+        durationInFrames={Math.round(55 * ASSHOLE_FPS)}
+        fps={ASSHOLE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyAsshole/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
           videoShiftY: -70,
         }}
         calculateMetadata={async ({ props }) => {

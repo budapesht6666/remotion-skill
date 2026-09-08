@@ -39,6 +39,12 @@ export const FILMS: Film[] = [
     path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e01_Minimum.Viable.Product.avi",
     language: "ru",
   },
+  {
+    slug: "silicon-valley-s01e02",
+    title: "Кремниевая долина — s01e02 «The Cap Table» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e02_The.Cap.Table.avi",
+    language: "ru",
+  },
 ];
 
 export function findFilm(slugOrPath: string): Film {
