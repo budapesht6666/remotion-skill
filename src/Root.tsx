@@ -13,6 +13,8 @@ import { PhysicsScene } from "./compositions/PhysicsScene/PhysicsScene";
 import { ShellEject } from "./compositions/ShellEject/ShellEject";
 import { TunnelRush } from "./compositions/TunnelRush/TunnelRush";
 import { JuniorKumite, type Clip } from "./compositions/JuniorKumite/JuniorKumite";
+import { ValleyAuction, type Clip as ValleyClip } from "./compositions/ValleyAuction/ValleyAuction";
+import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -289,6 +291,42 @@ const opacity = interpolate(
             return { durationInFrames: seconds(1), props };
           }
           const clips = (await res.json()) as Clip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: торги за стартап — одна сцена s01e01 с
+          оригинальным звуком дубляжа и караоке по словам из индекса реплик.
+          Одна сцена вместо компиляции держит досмотр: зритель ждёт, чем
+          кончится торг, а не въезжает в новый контекст каждые четыре секунды.
+          Сборка: `npm run cut -- ValleyAuction`; длительность — сумма клипов
+          из public/clips/ValleyAuction/clips.json. */}
+      <Composition
+        id="ValleyAuction"
+        component={ValleyAuction}
+        durationInFrames={Math.round(53 * VALLEY_FPS)}
+        fps={VALLEY_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyAuction/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          // Кадр чуть выше центра: под ним живёт субтитр, и так они не спорят.
+          videoShiftY: -70,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
           const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
           return {
             durationInFrames: Math.max(total, 1),

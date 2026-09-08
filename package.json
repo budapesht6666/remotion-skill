@@ -28,7 +28,9 @@
     "vo": "tsx scripts/voice-over.ts",
     "dict": "tsx scripts/pronunciation.ts",
     "art": "tsx scripts/prepare-art.ts",
-    "board": "tsx scripts/compile-board.ts"
+    "board": "tsx scripts/compile-board.ts",
+    "pan": "tsx scripts/pan-preview.ts",
+    "track": "tsx scripts/track-faces.ts"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",

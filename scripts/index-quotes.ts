@@ -137,8 +137,15 @@ function buildQuotes(
     // Явный мусор ASR на музыке/шуме: whisper любит галлюцинировать титры.
     if ((seg.no_speech_prob ?? 0) > 0.8) continue;
     if (NOISE.some((re) => re.test(text))) continue;
+    // Слово относим к сегменту по его середине, а не по обеим границам:
+    // whisper регулярно выпускает последнее слово фразы за seg.end, и строгая
+    // вложенность съедала его («Вы снизили» вместо «Вы снизили цену?»). Для
+    // караоке по оригинальной дорожке такой обрыв виден сразу.
     const segWords = words
-      .filter((w) => w.start >= seg.start - 0.05 && w.end <= seg.end + 0.05)
+      .filter((w) => {
+        const mid = (w.start + w.end) / 2;
+        return mid >= seg.start - 0.15 && mid <= seg.end + 0.15;
+      })
       .map((w) => ({ w: w.word.trim(), s: w.start, e: w.end }));
     quotes.push({
       id: `q${String(++n).padStart(4, "0")}`,

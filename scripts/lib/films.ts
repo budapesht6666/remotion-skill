@@ -33,6 +33,12 @@ export const FILMS: Film[] = [
     path: "C:/torrent/Godzilla x Kong. The New Empire (2024).mkv",
     language: "ru",
   },
+  {
+    slug: "silicon-valley-s01e01",
+    title: "Кремниевая долина — s01e01 «Minimum Viable Product» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e01_Minimum.Viable.Product.avi",
+    language: "ru",
+  },
 ];
 
 export function findFilm(slugOrPath: string): Film {
