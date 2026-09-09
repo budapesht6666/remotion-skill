@@ -321,6 +321,9 @@ const opacity = interpolate(
           videoScale: 1,
           // Кадр чуть выше центра: под ним живёт субтитр, и так они не спорят.
           videoShiftY: -70,
+          // Ролик уже сдан без концовки — не трогаем.
+          outroFrames: 0,
+          subscribeLabel: "SUBSCRIBE",
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));
@@ -330,7 +333,7 @@ const opacity = interpolate(
           const clips = (await res.json()) as ValleyClip[];
           const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
           return {
-            durationInFrames: Math.max(total, 1),
+            durationInFrames: Math.max(total + props.outroFrames, 1),
             props: { ...props, clips },
           };
         }}
@@ -356,6 +359,10 @@ const opacity = interpolate(
           showCaptions: true,
           videoScale: 1,
           videoShiftY: -70,
+          // Реплика договаривается до последнего кадра сцены, поэтому призыв
+          // подписаться живёт в хвосте на стоп-кадре: 60 кадров ≈ 2.5 с.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));
@@ -365,7 +372,7 @@ const opacity = interpolate(
           const clips = (await res.json()) as ValleyClip[];
           const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
           return {
-            durationInFrames: Math.max(total, 1),
+            durationInFrames: Math.max(total + props.outroFrames, 1),
             props: { ...props, clips },
           };
         }}

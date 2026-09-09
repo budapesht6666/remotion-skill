@@ -1,6 +1,7 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Freeze,
   interpolate,
   OffthreadVideo,
   Sequence,
@@ -9,6 +10,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { interFamily as fontFamily } from "../../lib/fonts";
+import { SubscribeOutro } from "../../components/SubscribeOutro";
 
 /**
  * РЕЦЕПТ: нарезка сериала со своими субтитрами, но чужими голосами.
@@ -26,6 +28,12 @@ import { interFamily as fontFamily } from "../../lib/fonts";
  * целиком — ни object-position, ни увеличения здесь нет и быть не должно.
  *
  * Никаких титров и плашек поверх кадра: ролик держится на самом материале.
+ *
+ * Единственное исключение — концовка (`outroFrames`): реплика в нарезке обычно
+ * договаривается до последнего кадра клипа, поэтому призыв подписаться некуда
+ * положить внутри сцены. Хвост держит последний кадр `<Freeze>` (отдельный файл
+ * стоп-кадра не нужен), затемняет его и показывает кнопку Subscribe. Ноль в
+ * пропе — концовки нет.
  *
  * Субтитры разбиваются на короткие строки по паузам в речи и живут в нижней
  * трети, выше зоны интерфейса площадок.
@@ -58,6 +66,10 @@ export type ValleyAuctionProps = {
   videoScale: number;
   /** Сдвиг кадра по вертикали в пикселях: минус — вверх. */
   videoShiftY: number;
+  /** Длина концовки с кнопкой Subscribe в кадрах; 0 — без концовки. */
+  outroFrames: number;
+  /** Подпись на кнопке концовки. */
+  subscribeLabel: string;
 };
 
 /** Пауза в речи, с которой начинается новая строка субтитра. */
@@ -230,14 +242,49 @@ const ClipShot: React.FC<{
   );
 };
 
+/**
+ * Стоп-кадр концовки: последний кадр нарезки, замороженный `<Freeze>`.
+ * Наезд и затемнение делает `SubscribeOutro` снаружи — внутри `<Freeze>`
+ * `useCurrentFrame()` заморожен вместе с картинкой.
+ */
+const FrozenLastFrame: React.FC<{
+  clip: Clip;
+  videoScale: number;
+  videoShiftY: number;
+}> = ({ clip, videoScale, videoShiftY }) => (
+  <AbsoluteFill
+    style={{ transform: `translateY(${videoShiftY}px) scale(${videoScale})` }}
+  >
+    {/* Внутри Freeze время стоит: OffthreadVideo достаёт один и тот же кадр —
+        последний кадр клипа. Отдельная картинка в public/ не нужна. */}
+    <Freeze frame={clip.durationInFrames - 1}>
+      <OffthreadVideo
+        src={staticFile(clip.file)}
+        volume={0}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: "brightness(1.06) contrast(1.06) saturate(1.1)",
+        }}
+      />
+    </Freeze>
+  </AbsoluteFill>
+);
+
 export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
   clips,
   accent,
   showCaptions,
   videoScale,
   videoShiftY,
+  outroFrames,
+  subscribeLabel,
 }) => {
   let cursor = 0;
+  const totalClipFrames = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+  const lastClip = clips[clips.length - 1];
+  const showOutro = outroFrames > 0 && lastClip !== undefined;
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
@@ -256,6 +303,22 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
           </Sequence>
         );
       })}
+
+      {showOutro ? (
+        <Sequence
+          from={totalClipFrames}
+          durationInFrames={outroFrames}
+          name="outro"
+        >
+          <SubscribeOutro label={subscribeLabel}>
+            <FrozenLastFrame
+              clip={lastClip}
+              videoScale={videoScale}
+              videoShiftY={videoShiftY}
+            />
+          </SubscribeOutro>
+        </Sequence>
+      ) : null}
     </AbsoluteFill>
   );
 };
