@@ -45,6 +45,42 @@ export const FILMS: Film[] = [
     path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e02_The.Cap.Table.avi",
     language: "ru",
   },
+  {
+    slug: "silicon-valley-s01e03",
+    title: "Кремниевая долина — s01e03 «Articles of Incorporation» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e03_Articles.of.Incorporation.avi",
+    language: "ru",
+  },
+  {
+    slug: "silicon-valley-s01e04",
+    title: "Кремниевая долина — s01e04 «Fiduciary Duties» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e04_Fiduciary.Duties.avi",
+    language: "ru",
+  },
+  {
+    slug: "silicon-valley-s01e05",
+    title: "Кремниевая долина — s01e05 «Signaling Risk» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e05_Signaling.Risk.avi",
+    language: "ru",
+  },
+  {
+    slug: "silicon-valley-s01e06",
+    title: "Кремниевая долина — s01e06 «Third Party Insourcing» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e06_Third.Party.Insourcing.avi",
+    language: "ru",
+  },
+  {
+    slug: "silicon-valley-s01e07",
+    title: "Кремниевая долина — s01e07 «Proof of Concept» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e07_Proof.of.Concept.avi",
+    language: "ru",
+  },
+  {
+    slug: "silicon-valley-s01e08",
+    title: "Кремниевая долина — s01e08 «Optimal Tip-to-Tip Efficiency» (2014)",
+    path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e08_Optimal.Tip-To-Tip.Efficiency.avi",
+    language: "ru",
+  },
 ];
 
 export function findFilm(slugOrPath: string): Film {
