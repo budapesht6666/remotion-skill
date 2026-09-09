@@ -1,6 +1,7 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   Freeze,
   interpolate,
   OffthreadVideo,
@@ -70,6 +71,16 @@ export type ValleyAuctionProps = {
   outroFrames: number;
   /** Подпись на кнопке концовки. */
   subscribeLabel: string;
+  /**
+   * Фоновая музыка под оригинальной дорожкой. Пустая строка — без музыки
+   * (у первых двух нарезок «Долины» её и нет). Путь в public/, не null:
+   * `null` в defaultProps гасит редактор пропсов в студии.
+   */
+  musicFile: string;
+  /** Громкость музыки под речью. */
+  musicVolume: number;
+  /** Громкость к панчу: трек подводит к последнему кадру монтажа. */
+  musicPeakVolume: number;
 };
 
 /** Пауза в речи, с которой начинается новая строка субтитра. */
@@ -280,7 +291,11 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
   videoShiftY,
   outroFrames,
   subscribeLabel,
+  musicFile,
+  musicVolume,
+  musicPeakVolume,
 }) => {
+  const { durationInFrames } = useVideoConfig();
   let cursor = 0;
   const totalClipFrames = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
   const lastClip = clips[clips.length - 1];
@@ -303,6 +318,32 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
           </Sequence>
         );
       })}
+
+      {/* Музыка идёт под оригинальной дорожкой и потому держится тихо: её
+          задача — не звучать, а не дать сцене провалиться в паузах, которых у
+          Питера Грегори много. К последнему кадру монтажа громкость подводится
+          вверх, а в концовке уходит в ноль, чтобы не спорить со звоном
+          колокольчика. */}
+      {musicFile ? (
+        <Audio
+          src={staticFile(musicFile)}
+          loop
+          volume={(f) =>
+            interpolate(
+              f,
+              [
+                0,
+                24,
+                Math.max(Math.round(totalClipFrames * 0.55), 25),
+                Math.max(totalClipFrames - 1, 26),
+                durationInFrames,
+              ],
+              [0, musicVolume, musicVolume, musicPeakVolume, 0],
+              { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+            )
+          }
+        />
+      ) : null}
 
       {showOutro ? (
         <Sequence

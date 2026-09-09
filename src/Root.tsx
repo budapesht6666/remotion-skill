@@ -16,6 +16,7 @@ import { JuniorKumite, type Clip } from "./compositions/JuniorKumite/JuniorKumit
 import { ValleyAuction, type Clip as ValleyClip } from "./compositions/ValleyAuction/ValleyAuction";
 import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
 import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
+import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -324,6 +325,10 @@ const opacity = interpolate(
           // Ролик уже сдан без концовки — не трогаем.
           outroFrames: 0,
           subscribeLabel: "SUBSCRIBE",
+          // Музыки в этом ролике нет: звучит только оригинальная дорожка.
+          musicFile: "",
+          musicVolume: 0,
+          musicPeakVolume: 0,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));
@@ -363,6 +368,53 @@ const opacity = interpolate(
           // подписаться живёт в хвосте на стоп-кадре: 60 кадров ≈ 2.5 с.
           outroFrames: 60,
           subscribeLabel: "SUBSCRIBE",
+          musicFile: "",
+          musicVolume: 0,
+          musicPeakVolume: 0,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: цикады — линия Питера Грегори из s01e03 «Articles
+          of Incorporation», собранная из двух разнесённых по серии сцен: залипание
+          на кунжутном зёрнышке и объяснение, как из него вышли 68 миллионов.
+          Третий монтаж на компоненте ValleyAuction, и первый с музыкой: под
+          оригинальной дорожкой тихо идёт трек, который подводит к панчу.
+          Сборка: `npm run track -- ValleyCicadas` → `npm run cut -- ValleyCicadas`. */}
+      <Composition
+        id="ValleyCicadas"
+        component={ValleyAuction}
+        durationInFrames={Math.round(80 * CICADAS_FPS)}
+        fps={CICADAS_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyCicadas/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          // Ноль, а не -70 как у соседних нарезок: клип приезжает ровно
+          // 1080x1920, и любой сдвиг открывает снизу чёрную полосу.
+          videoShiftY: 0,
+          // Панч договаривается до последнего кадра сцены, поэтому призыв
+          // подписаться живёт в хвосте на стоп-кадре: 60 кадров ≈ 2.5 с.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "cicadas-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));

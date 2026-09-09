@@ -197,6 +197,35 @@ Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
 
+## cicadas-music.mp3 — используется в композиции `ValleyCicadas`
+
+- **Трек:** «The Builder»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/The%20Builder.mp3
+
+Первая музыка в нарезках «Долины»: две прежние идут на голом оригинальном звуке.
+Здесь она понадобилась потому, что Питер Грегори говорит медленно и с паузами по
+две секунды — без подложки сцена в них проваливается.
+
+Подбирался замером полос (метод тот же, что у пары `diverbot-*-2`): важно, чтобы
+трек не лез в речевую полосу. Замер первых 60 c — низ (`lowpass=500`) −18.6 дБ,
+речь (`highpass=300,lowpass=3000`) −24.6, верх (`highpass=3000`) −40.9: разрыв
+низ/речь 6.0 дБ. У «Investigations» разрыв всего 2.3 дБ (пиццикато сидит ровно на
+голосе), у «Marty Gots a Plan» — 2.4 при вдвое более тихом треке. Своя огибающая
+у «The Builder» тоже в помощь: первые 10 c он на −23.5 дБ и дальше выходит на
+−17, то есть сам поднимается вместе с роликом.
+
+В композиции идёт на 0.07 под речью и подводится к 0.14 на последнем кадре
+монтажа, в концовке уходит в ноль, чтобы не спорить со звоном колокольчика.
+В `public/` лежит обрезанным до 84 c (оригинал 117 c).
+
+```
+Music: "The Builder" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
 ## sfx/ — синтезированные эффекты (без атрибуции)
 
 `beep.mp3` (цензурный бип 1 кГц), `bass-drop.mp3` (свип 150→35 Гц под
@@ -212,3 +241,4 @@ https://creativecommons.org/licenses/by/4.0/
 ## music.mp3 — lo-fi трек для `ReactTodoLesson`
 
 Из YouTube Audio Library (без атрибуции).
+
