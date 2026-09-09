@@ -81,6 +81,15 @@ export type Beat = {
   follow?: number;
 };
 
+/**
+ * Слово оригинальной дорожки в субтитре.
+ *
+ * `q` стоит у первого слова каждой реплики индекса: по нему караоке рвёт строку,
+ * чтобы в диалоге одна плашка не склеивала двух говорящих. Флаг появился позже
+ * первых нарезок, поэтому он опциональный — в их clips.json его нет.
+ */
+export type SourceWord = { w: string; s: number; e: number; q?: boolean };
+
 export type ClipMeta = {
   id: string;
   file: string;
@@ -99,7 +108,7 @@ export type ClipMeta = {
   /** Файл озвучки в public/, если реплика есть. */
   voFile: string | null;
   /** Слова реплики с таймингами — по ним рисуется караоке. */
-  words: { w: string; s: number; e: number }[];
+  words: SourceWord[];
 };
 
 /** Пауза после реплики, чтобы склейка не наступала на последнее слово. */
@@ -195,8 +204,8 @@ function sourceWords(
   start: number,
   end: number,
   slow: number,
-): { w: string; s: number; e: number }[] {
-  const out: { w: string; s: number; e: number }[] = [];
+): SourceWord[] {
+  const out: SourceWord[] = [];
   for (const q of quotes) {
     if (q.end <= start || q.start >= end) continue;
     const words =
@@ -209,6 +218,7 @@ function sourceWords(
               const step = (q.end - q.start) / arr.length;
               return { w, s: q.start + i * step, e: q.start + (i + 1) * step };
             });
+    let first = true;
     for (const w of words) {
       // Слово, наполовину оставшееся за склейкой, в субтитре только мешает.
       if ((w.s + w.e) / 2 <= start || (w.s + w.e) / 2 >= end) continue;
@@ -223,6 +233,11 @@ function sourceWords(
         s: Number(((w.s - start) * slow).toFixed(2)),
         e: Number(((w.e - start) * slow).toFixed(2)),
       });
+      // Первое слово реплики: по нему субтитр рвёт строку. В диалоге реплики
+      // наступают друг на друга (у «Я ем рыбу» / «Я понял, что ты ешь рыбу»
+      // зазор 0.12 c), и без этой метки одна строка склеивает двух говорящих.
+      if (first) out[out.length - 1].q = true;
+      first = false;
     }
   }
   return out.sort((a, b) => a.s - b.s);

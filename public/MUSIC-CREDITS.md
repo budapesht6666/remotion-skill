@@ -242,3 +242,29 @@ https://creativecommons.org/licenses/by/4.0/
 
 Из YouTube Audio Library (без атрибуции).
 
+## fish-music.mp3 — используется в композиции `ValleyFish`
+
+- **Трек:** «Life of Riley»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Life%20of%20Riley.mp3
+
+Вторая музыка в нарезках «Долины». Пауз, в которые проваливалась бы сцена, здесь
+нет — диалог плотный; подложка взята под настроение: бытовая перебранка соседей,
+и ленивый солнечный грув держит её как ситком, а не как разборку.
+
+Подбор — тем же замером полос, что у `cicadas-music.mp3`, на первых 30 c.
+Разрыв низ/речь 6.0 дБ (низ −19.4, речь −25.4, верх −34.3) — вровень с эталоном
+«The Builder» (6.5). Отвергнут «Carefree»: разрыв всего 2.0 дБ, трек сидит прямо
+на голосе. У «Monkeys Spinning Monkeys» замер лучше всех (7.6), но он заезжен до
+состояния мем-подложки и тянул бы аккуратную нарезку в дешёвый эдит.
+
+В композиции идёт на 0.07 под речью, к последнему кадру монтажа подводится к
+0.14, в концовке уходит в ноль, чтобы не спорить со звоном колокольчика.
+В `public/` лежит обрезанным до 26 c с фейдом в конце (оригинал 3:44).
+
+```
+Music: "Life of Riley" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```

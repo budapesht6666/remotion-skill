@@ -17,6 +17,7 @@ import { ValleyAuction, type Clip as ValleyClip } from "./compositions/ValleyAuc
 import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
 import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
 import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
+import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -413,6 +414,50 @@ const opacity = interpolate(
           outroFrames: 60,
           subscribeLabel: "SUBSCRIBE",
           musicFile: "cicadas-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: «Я ем рыбу» — сцена s01e04 «Fiduciary Duties»,
+          дебют Цзянь-Яна и первая его стычка с Эрлихом из-за рыбьих голов в
+          раковине. Четвёртый монтаж на компоненте ValleyAuction. Самый короткий
+          из нарезок (21 c): сцена держится на одном гэге и обрывается панчем,
+          растягивать её нечем и незачем.
+          Сборка: `npm run track -- ValleyFish` → `npm run cut -- ValleyFish`. */}
+      <Composition
+        id="ValleyFish"
+        component={ValleyAuction}
+        durationInFrames={Math.round(24 * FISH_FPS)}
+        fps={FISH_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyFish/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          // Ноль: клип приезжает ровно 1080x1920, любой сдвиг открыл бы снизу
+          // чёрную полосу.
+          videoShiftY: 0,
+          // Панч — последняя реплика сцены, поэтому призыв подписаться живёт в
+          // хвосте на стоп-кадре: 60 кадров ≈ 2.5 c.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "fish-music.mp3",
           musicVolume: 0.07,
           musicPeakVolume: 0.14,
         }}

@@ -49,8 +49,11 @@ export type Clip = {
   /** Громкость оригинальной дорожки: у этого рецепта она и есть звук ролика. */
   originalVolume: number;
   voFile: string | null;
-  /** Слова оригинальной дорожки с таймингами от начала клипа. */
-  words: { w: string; s: number; e: number }[];
+  /**
+   * Слова оригинальной дорожки с таймингами от начала клипа. `q` — первое слово
+   * реплики: по нему строка субтитра начинается заново (см. buildChunks).
+   */
+  words: { w: string; s: number; e: number; q?: boolean }[];
 };
 
 export type ValleyAuctionProps = {
@@ -98,9 +101,13 @@ type Chunk = {
 };
 
 /**
- * Режет слова клипа на строки субтитра: по паузе между словами и по длине.
- * Границы строк расширяются до соседей, чтобы между ними не было пустого
- * кадра — субтитр в вертикали должен висеть непрерывно.
+ * Режет слова клипа на строки субтитра: по началу новой реплики, по паузе
+ * между словами и по длине. Границы строк расширяются до соседей, чтобы между
+ * ними не было пустого кадра — субтитр в вертикали должен висеть непрерывно.
+ *
+ * Начало реплики (`q`) рвёт строку даже без паузы: в живом диалоге ответ
+ * наступает на вопрос (у «Я ем рыбу» / «Я понял, что ты ешь рыбу» зазор 0.12 c),
+ * и одна плашка на двух говорящих читается как оговорка одного из них.
  */
 function buildChunks(words: Clip["words"], durationInSeconds: number): Chunk[] {
   const groups: Clip["words"][] = [];
@@ -109,7 +116,10 @@ function buildChunks(words: Clip["words"], durationInSeconds: number): Chunk[] {
   for (const word of words) {
     const previous = current[current.length - 1];
     const gap = previous ? word.s - previous.e : 0;
-    if (current.length > 0 && (gap > CHUNK_GAP || chars + word.w.length + 1 > CHUNK_CHARS)) {
+    if (
+      current.length > 0 &&
+      (word.q || gap > CHUNK_GAP || chars + word.w.length + 1 > CHUNK_CHARS)
+    ) {
       groups.push(current);
       current = [];
       chars = 0;
