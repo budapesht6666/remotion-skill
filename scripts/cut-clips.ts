@@ -19,7 +19,7 @@
  *   • loudnorm — иначе тихая реплика и удар в гонг звучат несопоставимо;
  *   • для битов с mute звук выбрасывается (под них кладётся свой).
  */
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -79,6 +79,24 @@ export type Beat = {
    * Пригодится, когда в плане двое и автоматика ведёт не того.
    */
   follow?: number;
+  /**
+   * Показать кусок кадра НА ВСЮ ШИРИНУ вертикали, а пустоту сверху и снизу
+   * закрыть размытой копией кадра (паттерн JuniorKumite). Нужно, когда важен
+   * не человек, а широкий объект — картина, экран, мизансцена: окно 0.32
+   * ширины его не вместит, а вписать целиком по ширине — значит уменьшить.
+   * `x` — доля ширины исходника в центре, `width` — какая доля ширины видна.
+   * `push` — медленный наезд за бит (0.06 = +6 % к концу): нужен на запертой
+   * камере, иначе статичный план в ленте читается как зависшее видео.
+   * Трекер и `pan` для такого бита не нужны.
+   */
+  view?: { x: number; width: number; push?: number };
+  /**
+   * Области кадра, которые надо замазать (цензура): доли ширины и высоты
+   * ИСХОДНОГО кадра, левый верхний угол и размер. Размытие ставится до
+   * масштабирования и кропа, поэтому координаты не зависят от кадрирования.
+   * `from`/`to` — секунды от начала бита, по умолчанию весь бит.
+   */
+  blur?: { x: number; y: number; w: number; h: number; from?: number; to?: number }[];
 };
 
 /**
@@ -299,7 +317,9 @@ async function main() {
     : {};
   // Молча резать без траекторий нельзя: окно встанет по центру, и говорящие
   // окажутся за краем вертикали. Лучше остановиться, чем отдать такой монтаж.
-  const missing = beats.filter((b) => !b.pan && !tracks[b.id]).map((b) => b.id);
+  const missing = beats
+    .filter((b) => !b.pan && !b.view && !tracks[b.id])
+    .map((b) => b.id);
   if (missing.length > 0) {
     console.error(
       `Нет траекторий окна для битов: ${missing.join(", ")}
@@ -349,22 +369,78 @@ async function main() {
     const points = beat.pan ?? tracks[beat.id]?.pan ?? [];
     const xExpr = panExpression(points, stageWidth, FORMAT.width, fps);
 
-    const videoFilter = [
-      // Денойз до апскейла: иначе увеличение вытягивает шум рипа вместе с
-      // деталями и картинка «сыпется».
-      "hqdn3d=1.5:1.2:6:6",
-      `scale=${stageWidth}:${stageHeight}:flags=lanczos`,
-      // Выражения crop в ffmpeg 8 пересчитываются на каждом кадре сами
-      // (параметры помечены как timeline-aware), отдельный eval=frame больше не
-      // нужен — и не принимается.
-      `crop=${FORMAT.width}:${FORMAT.height}:x='${xExpr}':y=${Math.round((stageHeight - FORMAT.height) / 2)}`,
-      // Мягкая резкость возвращает контур после четырёхкратного увеличения.
-      "unsharp=5:5:0.7:5:5:0.0",
+    // Цензура: область исходного кадра замазывается ДО масштабирования —
+    // вырезаем кусок, размываем и кладём обратно. Каждая область — своя пара
+    // split/overlay, поэтому это отдельные звенья графа, а не один фильтр.
+    const blurChain = (beat.blur ?? [])
+      .map((b, i) => {
+        const x = Math.round(b.x * srcWidth);
+        const y = Math.round(b.y * srcHeight);
+        const w = Math.round(b.w * srcWidth / 2) * 2;
+        const h = Math.round(b.h * srcHeight / 2) * 2;
+        const enable =
+          b.from !== undefined || b.to !== undefined
+            ? `:enable='between(t,${(b.from ?? 0).toFixed(2)},${(b.to ?? srcDuration).toFixed(2)})'`
+            : "";
+        return (
+          `split[b${i}a][b${i}b];` +
+          `[b${i}b]crop=${w}:${h}:${x}:${y},boxblur=luma_radius=10:luma_power=3:chroma_radius=5:chroma_power=3[b${i}m];` +
+          `[b${i}a][b${i}m]overlay=${x}:${y}${enable}`
+        );
+      })
+      .join(",");
+
+    const fpsArg = Number.isInteger(fps) ? String(fps) : `${Math.round(fps * 1001)}/1001`;
+    const tail = [
       ...(slow !== 1 ? [`setpts=${slow}*PTS`] : []),
       // Дробный fps отдаём точной дробью (24000/1001), а не десятичной записью:
       // накопленная ошибка округления сдвигает кадры на длинных клипах.
-      `fps=${Number.isInteger(fps) ? fps : `${Math.round(fps * 1001)}/1001`}`,
-    ].join(",");
+      `fps=${fpsArg}`,
+    ];
+
+    let videoFilter: string;
+    if (beat.view) {
+      // Режим «кусок кадра на всю ширину»: фрагмент шириной `view.width`
+      // масштабируется до 1080 по ширине и ложится по центру поверх размытой
+      // копии кадра, растянутой на всю вертикаль. Увеличение здесь меньше,
+      // чем у обычного окна (0.6 ширины → ×2.6 против ×4.8), поэтому денойз
+      // и резкость те же, а пикселей не видно.
+      const viewW = Math.round((beat.view.width * srcWidth) / 2) * 2;
+      const viewX = Math.max(0, Math.min(srcWidth - viewW, Math.round(beat.view.x * srcWidth - viewW / 2)));
+      const fgH = Math.round((srcHeight * FORMAT.width) / viewW / 2) * 2;
+      const pre = ["hqdn3d=1.5:1.2:6:6", ...(blurChain ? [blurChain] : [])].join(",");
+      // Наезд: zoompan по кадрам (d=1 — кадр в кадр), центр держится, зум
+      // растёт линейно от 1 до 1+push. Считаем на удвоенном разрешении —
+      // иначе целочисленное окно zoompan дрожит на медленном движении.
+      const push = beat.view.push ?? 0;
+      const frames = Math.max(2, Math.round(srcDuration * fps));
+      const fgScale =
+        push > 0
+          ? `scale=${FORMAT.width * 2}:-2:flags=lanczos,` +
+            `zoompan=z='1+${push}*on/${frames - 1}':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:s=${FORMAT.width}x${fgH}:fps=${fpsArg}`
+          : `scale=${FORMAT.width}:${fgH}:flags=lanczos`;
+      videoFilter =
+        `${pre},split[bg][fg];` +
+        `[bg]scale=${FORMAT.width}:${FORMAT.height}:force_original_aspect_ratio=increase,` +
+        `crop=${FORMAT.width}:${FORMAT.height},gblur=sigma=40,eq=brightness=-0.12:saturation=0.8[bgb];` +
+        `[fg]crop=${viewW}:${srcHeight}:${viewX}:0,${fgScale},unsharp=5:5:0.7:5:5:0.0[fgs];` +
+        `[bgb][fgs]overlay=0:${Math.round((FORMAT.height - fgH) / 2)},${tail.join(",")}`;
+    } else {
+      videoFilter = [
+        // Денойз до апскейла: иначе увеличение вытягивает шум рипа вместе с
+        // деталями и картинка «сыпется».
+        "hqdn3d=1.5:1.2:6:6",
+        ...(blurChain ? [blurChain] : []),
+        `scale=${stageWidth}:${stageHeight}:flags=lanczos`,
+        // Выражения crop в ffmpeg 8 пересчитываются на каждом кадре сами
+        // (параметры помечены как timeline-aware), отдельный eval=frame больше не
+        // нужен — и не принимается.
+        `crop=${FORMAT.width}:${FORMAT.height}:x='${xExpr}':y=${Math.round((stageHeight - FORMAT.height) / 2)}`,
+        // Мягкая резкость возвращает контур после четырёхкратного увеличения.
+        "unsharp=5:5:0.7:5:5:0.0",
+        ...tail,
+      ].join(",");
+    }
     // Под нашей репликой оригинальные голоса мешают, поэтому режем полосу
     // разборчивости (речь живёт в 300–3400 Гц) — остаётся низкий гул зала и
     // удары, атмосфера не пропадает. В сценах без наших слов дорожка не трогается.
@@ -460,6 +536,8 @@ async function main() {
     : metas;
   await writeFile(metaPath, JSON.stringify(merged, null, 2), "utf8");
 
+  await buildAudioTrack(SCRIPT, outDir, merged, fps);
+
   const total = merged.reduce((s, m) => s + m.durationInFrames, 0);
   console.log(
     `\nГотово за ${((Date.now() - t0) / 1000).toFixed(0)} c: ` +
@@ -472,6 +550,90 @@ async function main() {
     );
     for (const s of stretched) console.log(`  ${s}`);
   }
+}
+
+/**
+ * ОДНА НЕПРЕРЫВНАЯ ЗВУКОВАЯ ДОРОЖКА РОЛИКА — `audio.m4a` рядом с клипами.
+ *
+ * Зачем: в рендере Remotion на границе каждого `<Sequence>` из звука
+ * `<OffthreadVideo>` выпадает 20–50 мс — на стыке битов слышен провал, а на
+ * непрерывной музыке сцены (`ValleyMural`, склейка внутри одного плана) это
+ * уже щелчок. У самих клипов аудио целое — теряется оно при сборке. Поэтому
+ * композиция играет клипы без звука, а дорожку — одним файлом: сегменты
+ * исходника режутся ровно в длину клипа (durationInFrames / fps, до сэмпла),
+ * клеятся встык с 5-мс сглаживанием краёв и нормируются ОДИН раз — так на
+ * стыках нет ни дырок, ни скачков уровня, которые давал loudnorm по клипам.
+ *
+ * Собирается всегда целиком, даже при `--only`: дорожка — это весь ролик.
+ */
+async function buildAudioTrack(
+  script: Beat[],
+  outDir: string,
+  metas: ClipMeta[],
+  fps: number,
+): Promise<void> {
+  const tmp = path.join(outDir, ".audio");
+  await mkdir(tmp, { recursive: true });
+  const parts: string[] = [];
+  let anySource = false;
+  for (const meta of metas) {
+    const beat = script.find((b) => b.id === meta.id);
+    if (!beat) continue;
+    const film = findFilm(beat.film);
+    const slow = beat.slow ?? 1;
+    const dur = meta.durationInFrames / fps;
+    const part = path.join(tmp, `${meta.id}.wav`);
+    if (beat.subs === "source") anySource = true;
+    const killDialogue = Boolean(beat.line) && !beat.keepDialogue;
+    const shape = [
+      `atrim=0:${dur.toFixed(6)}`,
+      "asetpts=N/SR/TB",
+      // 5 мс сглаживания на краях: без него щелчок на каждом стыке, с ним —
+      // по длине короче одного кадра, на слух незаметно.
+      "afade=t=in:d=0.005",
+      `afade=t=out:st=${Math.max(0, dur - 0.005).toFixed(6)}:d=0.005`,
+    ];
+    if (beat.mute) {
+      await run("ffmpeg", [
+        "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "lavfi", "-i", `anullsrc=r=48000:cl=stereo:d=${dur.toFixed(6)}`,
+        "-af", shape.join(","), "-c:a", "pcm_s16le", part,
+      ]);
+    } else {
+      const filter = [
+        ...(slow !== 1 ? [`atempo=${(1 / slow).toFixed(3)}`] : []),
+        ...(killDialogue ? ["lowpass=f=180"] : []),
+        ...(meta.originalVolume !== 1 ? [`volume=${meta.originalVolume}`] : []),
+        ...shape,
+      ].join(",");
+      await run("ffmpeg", [
+        "-y", "-hide_banner", "-loglevel", "error",
+        "-ss", String(beat.start),
+        // Запас: atrim выше отрежет ровно в длину клипа.
+        "-t", String(dur / slow + 0.5),
+        "-i", film.path,
+        "-vn", "-ac", "2", "-ar", "48000",
+        "-af", filter,
+        "-c:a", "pcm_s16le", part,
+      ]);
+    }
+    parts.push(part);
+  }
+  if (parts.length === 0) return;
+  const target = anySource ? "I=-13:TP=-1.0:LRA=11" : "I=-16:TP=-1.5:LRA=11";
+  const out = path.join(outDir, "audio.m4a");
+  await run("ffmpeg", [
+    "-y", "-hide_banner", "-loglevel", "error",
+    ...parts.flatMap((f) => ["-i", f]),
+    "-filter_complex",
+    `${parts.map((_, i) => `[${i}:a]`).join("")}concat=n=${parts.length}:v=0:a=1,loudnorm=${target}[a]`,
+    "-map", "[a]",
+    "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+    "-movflags", "+faststart",
+    out,
+  ]);
+  await rm(tmp, { recursive: true, force: true });
+  console.log(`Дорожка: ${out}`);
 }
 
 main().catch((err) => {

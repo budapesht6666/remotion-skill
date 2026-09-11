@@ -19,6 +19,7 @@ import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
 import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
 import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
 import { FPS as SCRUM_FPS } from "./compositions/ValleyScrum/script";
+import { FPS as MURAL_FPS } from "./compositions/ValleyMural/script";
 import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
 import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
 import {
@@ -494,6 +495,9 @@ const opacity = interpolate(
         defaultProps={{
           clips: [] as ValleyClip[],
           clipsFile: "clips/ValleyScrum/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс
+          // звука клипов, слышно как провал на каждой склейке битов.
+          audioFile: "clips/ValleyScrum/audio.m4a",
           accent: "#38e07b",
           showCaptions: true,
           videoScale: 1,
@@ -507,6 +511,51 @@ const opacity = interpolate(
           musicFile: "scrum-music.mp3",
           musicVolume: 0.07,
           musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: «Картина» — финал s01e05: Гэвин Белсон в холле
+          Hooli оценивает похабную картину Чуя, сотрудник с яблоком смотрит на
+          неё пустым взглядом. Шестой монтаж на компоненте ValleyAuction, 19 c.
+          Картина показана режимом `view` (на всю ширину, полосы размыты), пах
+          на ней замазан `blur`. Без музыки — по просьбе пользователя.
+          Сборка: `npm run track -- ValleyMural` → `npm run cut -- ValleyMural`. */}
+      <Composition
+        id="ValleyMural"
+        component={ValleyAuction}
+        durationInFrames={Math.round(22 * MURAL_FPS)}
+        fps={MURAL_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyMural/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс
+          // звука клипов, слышно как провал на каждой склейке битов.
+          audioFile: "clips/ValleyMural/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // Без музыки: пустая строка, не null (иначе панель пропсов студии
+          // молча исчезает).
+          musicFile: "",
+          musicVolume: 0,
+          musicPeakVolume: 0,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));

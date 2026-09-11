@@ -194,6 +194,50 @@ async function latestRender(comp: string): Promise<string | null> {
   return path.join(dir, withTime[0].f);
 }
 
+/**
+ * Провалы звука вокруг стыков: окна по 10 мс тише −60 дБ, у которых в
+ * пределах 0.1 c есть окно громче −40 дБ (то есть не тихое место сцены, а
+ * именно дырка). Огибающую печатает astats в stderr — собираем его сами.
+ */
+async function audioGaps(
+  file: string,
+  joins: number[],
+): Promise<{ join: number; at: number; level: number }[]> {
+  let log = "";
+  await run(
+    "ffmpeg",
+    [
+      "-hide_banner", "-i", file,
+      "-af", "asetnsamples=480,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level",
+      "-f", "null", "-",
+    ],
+    (chunk) => {
+      log += chunk;
+    },
+  );
+  const env: { t: number; db: number }[] = [];
+  const re = /pts_time:([\d.]+)[\s\S]*?RMS_level=(-?[\d.]+|-inf|-)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(log)) !== null) {
+    const db = m[2] === "-" || m[2] === "-inf" ? -120 : Number(m[2]);
+    env.push({ t: Number(m[1]), db });
+  }
+  // Дырка — это не «тихо», а «резко тише соседей»: окно на 12 дБ ниже
+  // медианы ±0.15 c вокруг стыка и само тише −45 дБ. Полная тишина (−120)
+  // ловится этим же правилом; порог в 12 дБ нужен для дырок с подмешанным
+  // хвостом (у ValleyScrum v1 провал был до −53 на фоне −40).
+  const found: { join: number; at: number; level: number }[] = [];
+  for (const join of joins) {
+    const win = env.filter((e) => e.t > join - 0.15 && e.t < join + 0.15);
+    if (win.length === 0) continue;
+    const sorted = win.map((e) => e.db).sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const hole = win.find((e) => e.db < median - 12 && e.db < -45);
+    if (hole) found.push({ join, at: hole.t, level: hole.db });
+  }
+  return found;
+}
+
 async function main() {
   const { comp, video, around } = parseArgs(process.argv.slice(2));
   if (!comp) {
@@ -319,6 +363,17 @@ async function main() {
     console.log(`  строка ${i + 1}: ${b.from} → ${b.to}, кадр ${b.at} (${(b.at / fps).toFixed(2)} c)`);
   });
   console.log(`  ${sheet}`);
+
+  // Звук на стыках. Remotion на границе <Sequence> терял 20–50 мс звука
+  // клипов — на слух провал, на непрерывной музыке щелчок; заметил заказчик,
+  // а не проверка. Меряем огибающую по 10 мс в ±0.15 c от каждого стыка:
+  // окно резко тише соседей — дырка, а не тихое место сцены.
+  const gaps = await audioGaps(file, bounds.map((b) => b.at / fps));
+  for (const g of gaps) {
+    console.log(`! звук: дырка на стыке ${g.join.toFixed(2)} c (${g.at.toFixed(3)} c, ${g.level.toFixed(0)} дБ)`);
+    problems.push(`звук ${g.join.toFixed(2)}`);
+  }
+  if (gaps.length === 0) console.log("  Звук на стыках непрерывен.");
 
   // Склейки ВНУТРИ битов — это монтаж самого сериала, и брак там того же рода:
   // окно вертикали перебрасывается на смене плана, и первый кадр нового плана

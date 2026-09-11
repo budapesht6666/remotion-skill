@@ -84,6 +84,14 @@ export type ValleyAuctionProps = {
   musicVolume: number;
   /** Громкость к панчу: трек подводит к последнему кадру монтажа. */
   musicPeakVolume: number;
+  /**
+   * Непрерывная звуковая дорожка ролика (`clips/<Comp>/audio.m4a` из
+   * `npm run cut`). Если задана, клипы играют без звука, а дорожка — одним
+   * файлом: на границах `<Sequence>` Remotion теряет 20–50 мс звука
+   * `<OffthreadVideo>`, и на каждом стыке был слышен провал. Пустая строка
+   * или отсутствие — старое поведение (звук из клипов).
+   */
+  audioFile?: string;
 };
 
 /** Пауза в речи, с которой начинается новая строка субтитра. */
@@ -204,7 +212,9 @@ const ClipShot: React.FC<{
   showCaptions: boolean;
   videoScale: number;
   videoShiftY: number;
-}> = ({ clip, accent, showCaptions, videoScale, videoShiftY }) => {
+  /** Звук идёт отдельной дорожкой — клип немой. */
+  muted: boolean;
+}> = ({ clip, accent, showCaptions, videoScale, videoShiftY, muted }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const time = frame / fps;
@@ -224,7 +234,8 @@ const ClipShot: React.FC<{
       >
         <OffthreadVideo
           src={src}
-          volume={clip.originalVolume}
+          muted={muted}
+          volume={muted ? 0 : clip.originalVolume}
           style={{
             width: "100%",
             height: "100%",
@@ -311,6 +322,7 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
   musicFile,
   musicVolume,
   musicPeakVolume,
+  audioFile = "",
 }) => {
   const { durationInFrames } = useVideoConfig();
   let cursor = 0;
@@ -331,10 +343,19 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
               showCaptions={showCaptions}
               videoScale={videoScale}
               videoShiftY={videoShiftY}
+              muted={Boolean(audioFile)}
             />
           </Sequence>
         );
       })}
+
+      {/* Оригинальная дорожка одним файлом — ровно на длину монтажа, стоп-кадр
+          концовки звука не имеет. */}
+      {audioFile ? (
+        <Sequence from={0} durationInFrames={Math.max(totalClipFrames, 1)} name="audio">
+          <Audio src={staticFile(audioFile)} />
+        </Sequence>
+      ) : null}
 
       {/* Музыка идёт под оригинальной дорожкой и потому держится тихо: её
           задача — не звучать, а не дать сцене провалиться в паузах, которых у
