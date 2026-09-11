@@ -276,11 +276,18 @@ const FrozenLastFrame: React.FC<{
   <AbsoluteFill
     style={{ transform: `translateY(${videoShiftY}px) scale(${videoScale})` }}
   >
-    {/* Внутри Freeze время стоит: OffthreadVideo достаёт один и тот же кадр —
-        последний кадр клипа. Отдельная картинка в public/ не нужна. */}
-    <Freeze frame={clip.durationInFrames - 1}>
+    {/* Кадр выбирается ОБРЕЗКОЙ клипа (`trimBefore`), а не номером в `Freeze`.
+        Так было раньше — `<Freeze frame={длина клипа − 1}>` — и это молча
+        показывало не тот кадр: внутри хвоста живёт своя `<Sequence>` на 60
+        кадров, время видео считается относительно неё, и номер за её пределами
+        упирался в потолок. На последнем клипе «Долины» разница была не видна
+        (весь план — один и тот же герой), а на «Офисе» панч висит 1.4 c, и в
+        концовке замирал кадр из середины бита. Теперь клип обрезан так, что его
+        нулевой кадр И ЕСТЬ последний, а `<Freeze frame={0}>` его держит. */}
+    <Freeze frame={0}>
       <OffthreadVideo
         src={staticFile(clip.file)}
+        trimBefore={clip.durationInFrames - 1}
         volume={0}
         style={{
           width: "100%",

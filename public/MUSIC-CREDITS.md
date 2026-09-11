@@ -242,7 +242,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 Из YouTube Audio Library (без атрибуции).
 
-## fish-music.mp3 — используется в композиции `ValleyFish`
+## fish-music.mp3 — используется в композициях `ValleyFish` и `OfficePencil`
 
 - **Трек:** «Life of Riley»
 - **Автор:** Kevin MacLeod (incompetech.com)
@@ -265,6 +265,26 @@ https://creativecommons.org/licenses/by/4.0/
 
 ```
 Music: "Life of Riley" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## office-music.mp3 — используется в композиции `OfficeMufasa`
+
+- **Трек:** «Backbay Lounge»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Backbay%20Lounge.mp3
+
+Ленивый лаунж-джаз на контрабасе. Выбран замером полос среди четырёх
+кандидатов: разрыв низ/речь 9.4 дБ — лучший в подборке (у напрашивавшегося по
+названию «Amazing Plan» он −2.9, то есть пиццикато село бы ровно на реплики; у
+«Carefree» 2.3, у «Fluffing a Duck» 4.8). Сцена «Офиса» держит долгие неловкие
+паузы между историями, и в вертикали они провисают без подложки. Громкость 0.07
+под оригинальной дорожкой, к панчу 0.14.
+
+```
+Music: "Backbay Lounge" by Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```

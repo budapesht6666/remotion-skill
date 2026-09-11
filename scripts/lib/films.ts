@@ -81,6 +81,12 @@ export const FILMS: Film[] = [
     path: "C:/torrent/Silicon.Valley.2014-2019.web-dlrip_[teko]/Season_01/s01e08_Optimal.Tip-To-Tip.Efficiency.avi",
     language: "ru",
   },
+  {
+    slug: "the-office-s03e04",
+    title: "Офис — s03e04 «Grief Counseling» (2006)",
+    path: "C:/torrent/The.Office.US.S03.WEB-DLRip/The.Office.US.S03E04.Grief.Counseling.WEB-DLRip.avi",
+    language: "ru",
+  },
 ];
 
 export function findFilm(slugOrPath: string): Film {

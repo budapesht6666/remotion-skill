@@ -18,6 +18,8 @@ import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
 import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
 import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
 import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
+import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
+import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -460,6 +462,97 @@ const opacity = interpolate(
           musicFile: "fish-music.mp3",
           musicVolume: 0.07,
           musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Мой кузен Муфаса» — нарезка «Офиса» s03e04 на компоненте ValleyAuction:
+          развязка через `clipsFile`, свой script.ts и своя папка public/clips/.
+          Сцена «кружка горя»: три истории, где сотрудники выдают сюжеты фильмов
+          за свои трагедии. Первая нарезка проекта с музыкой поверх диалога —
+          «Офис» держит долгие неловкие паузы, и в вертикали они провисают.
+          Сборка: `npm run track -- OfficeMufasa` → `npm run cut -- OfficeMufasa`. */}
+      <Composition
+        id="OfficeMufasa"
+        component={ValleyAuction}
+        durationInFrames={Math.round(78 * OFFICE_FPS)}
+        fps={OFFICE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/OfficeMufasa/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          // Ноль: клип приезжает ровно 1080x1920, любой сдвиг открыл бы снизу
+          // чёрную полосу.
+          videoShiftY: 0,
+          // Панч — последняя реплика сцены, поэтому призыв подписаться живёт в
+          // хвосте на стоп-кадре: 60 кадров ≈ 2.5 c.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // «Backbay Lounge»: из четырёх кандидатов у него самый большой разрыв
+          // низ/речь (9.4 дБ) — ленивый контрабас держит паузы и не лезет в
+          // голоса. У напрашивавшегося «Amazing Plan» разрыв −2.9: пиццикато
+          // сидело бы ровно на репликах.
+          musicFile: "office-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Карандаш со склада» — вторая нарезка «Офиса» s03e04 на том же
+          компоненте: холодная открывашка про несуществующую лестницу. В отличие
+          от OfficeMufasa сцена держится не на репликах, а на пантомиме, и почти
+          все планы здесь общие — кадрирование в вертикаль расписано вручную
+          почти во всех битах.
+          Сборка: `npm run track -- OfficePencil` → `npm run cut -- OfficePencil`. */}
+      <Composition
+        id="OfficePencil"
+        component={ValleyAuction}
+        durationInFrames={Math.round(63 * PENCIL_FPS)}
+        fps={PENCIL_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/OfficePencil/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // «Life of Riley» — тот же трек, что у ValleyFish. Здесь он на месте:
+          // половина ролика идёт без слов (спуск, ползание), и лёгкое укулеле
+          // держит эти куски, не мешая репликам (разрыв низ/речь 6.1 дБ).
+          musicFile: "fish-music.mp3",
+          musicVolume: 0.08,
+          musicPeakVolume: 0.15,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));

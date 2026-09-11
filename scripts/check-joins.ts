@@ -28,7 +28,9 @@ import { mkdir, readFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { run, probe } from "./lib/media";
+import { findFilm } from "./lib/films";
 
 /** Короче этого чужой план на краю бита читается как брак склейки. */
 /**
@@ -39,6 +41,22 @@ import { run, probe } from "./lib/media";
 const MAX_OUTRO_FRAMES = 120;
 
 const MIN_SHOT = 0.35;
+/**
+ * Порог детектора, которым ищем склейки в ИСХОДНИКЕ. Ниже рабочего (0.25),
+ * которым пользуются трекер и проверка обрывков: между двумя планами одной
+ * сцены — тот же герой, тот же фон, та же экспозиция — разница кадров мала, и
+ * на 0.25 такая склейка не находится вовсе. Для трекера это терпимо (он ведёт
+ * лицо), а для кадрирования нет: окно едет сквозь ненайденную склейку, и
+ * первый кадр нового плана оказывается кадрирован «между» двумя планами.
+ * Ложные срабатывания на резком движении здесь не страшны — они попадают в
+ * лист, который всё равно читают глазами. Подряд идущие срабатывания (панорама,
+ * взмах руки перед камерой) схлопываются в одно: см. `sourceScenes`.
+ */
+const SCENE_LOW = 0.05;
+/** Переброс окна: больше этого считается ступенькой на склейке. */
+const PAN_STEP = 0.008;
+/** Меньше этого окно считается стоящим на месте. */
+const PAN_STILL = 0.004;
 /** Сколько кадров показывать по каждую сторону стыка. */
 const AROUND = 4;
 
@@ -81,6 +99,87 @@ async function scenesOf(file: string): Promise<number[]> {
   }
   return times;
 }
+
+type PanPoint = { t: number; x: number };
+
+/** Склейки внутри отрезка исходника; время — от начала отрезка. */
+async function sourceScenes(file: string, start: number, duration: number): Promise<number[]> {
+  let stderr = "";
+  await run(
+    "ffmpeg",
+    ["-hide_banner", "-nostats", "-ss", String(start), "-t", String(duration),
+     "-i", file, "-an", "-vf", `select='gt(scene,${SCENE_LOW})',showinfo`, "-f", "null", "-"],
+    (chunk: string) => {
+      stderr += chunk;
+    },
+  );
+  const times: number[] = [];
+  for (const m of stderr.matchAll(/pts_time:([0-9.]+)/g)) {
+    const t = Number(m[1]);
+    if (t > 0.05 && t < duration - 0.02) times.push(Number(t.toFixed(3)));
+  }
+  // На низком пороге быстрое движение даёт очередь срабатываний подряд. Склейка
+  // одна, поэтому очередь схлопывается в первое событие.
+  const merged: number[] = [];
+  for (const t of times.sort((a, b) => a - b)) {
+    if (merged.length === 0 || t - merged[merged.length - 1] > 0.2) merged.push(t);
+  }
+  return merged;
+}
+
+/**
+ * Положение окна в момент `t` — та же арифметика, что у `panExpression`
+ * в scripts/cut-clips.ts: пара точек ближе полутора кадров считается
+ * мгновенным перебросом, всё остальное интерполируется линейно.
+ */
+function xAt(points: PanPoint[], t: number, fps: number): number {
+  if (points.length === 0) return 0.5;
+  if (points.length === 1) return points[0].x;
+  const frame = 1 / fps;
+  if (t <= points[0].t) return points[0].x;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (t >= a.t && t < b.t) {
+      if (b.t - a.t <= 1.5 * frame) return t < b.t - 0.5 * frame ? a.x : b.x;
+      return a.x + ((b.x - a.x) * (t - a.t)) / (b.t - a.t);
+    }
+  }
+  return points[points.length - 1].x;
+}
+
+/** Модель детектора лиц — та же, что у трекера. */
+const FACE_MODEL = "data/models/face_detection_yunet.onnx";
+
+/**
+ * Есть ли в отрезке клипа хотя бы одно лицо. Нужно для краёв бита: кадр без
+ * человека на стыке читается как мусор («видео не загрузилось», «мелькнуло
+ * что-то»), и глазами это ловится только если специально смотреть именно
+ * первый и последний кадр каждого бита.
+ */
+async function faceAt(
+  file: string,
+  from: number,
+  to: number,
+): Promise<{ found: boolean; nearest: number }> {
+  if (!existsSync(path.resolve(FACE_MODEL))) return { found: true, nearest: 0.5 };
+  try {
+    const raw = await run("python", [
+      "scripts/lib/face_track.py", file, String(from), String(to), "0.04", FACE_MODEL,
+    ]);
+    const { samples } = JSON.parse(raw) as { samples: { faces: { x: number }[] }[] };
+    const xs = samples.flatMap((s) => s.faces.map((f) => f.x));
+    if (xs.length === 0) return { found: false, nearest: 0.5 };
+    // Насколько лицо близко к краю кадра: 0 — впритык, 0.5 — по центру.
+    const nearest = Math.max(...xs.map((x) => Math.min(x, 1 - x)));
+    return { found: true, nearest };
+  } catch {
+    return { found: true, nearest: 0.5 };
+  }
+}
+
+/** Ближе этой доли ширины к краю герой читается как обрезанный. */
+const FACE_EDGE = 0.14;
 
 /** Самый свежий рендер ролика, если файл не назван явно. */
 async function latestRender(comp: string): Promise<string | null> {
@@ -254,6 +353,133 @@ async function main() {
 Листы склеек внутри битов в ${outDir} — по файлу на бит (${sheets} шт., строка = склейка, ` +
         `слева последний кадр старого плана, дальше три первых кадра нового — кадрирование должно совпадать).`,
     );
+  }
+
+
+  // --- Края битов: читается ли кадр на стыке -------------------------------
+  // Стык склеивает последний кадр одного бита с первым кадром другого, и оба
+  // обязаны читаться сами по себе. Хуже всего — кадр, из которого герой уже
+  // вышел (спина у края) или ещё не вошёл (пустой коридор): в ленте это
+  // выглядит как мусорный кадр на склейке. Детектор лиц ловит такие края
+  // автоматически; сцены, снятые со спины, он тоже пометит — их проверяют
+  // глазами по листу стыков.
+  const edgeProblems: string[] = [];
+  {
+    let offset = 0;
+    for (let i = 0; i < clips.length; i++) {
+      const clip = clips[i];
+      const clipFile = path.resolve("public", clip.file);
+      const clipStart = offset;
+      offset += clip.durationInFrames;
+      if (!existsSync(clipFile)) continue;
+      const duration = clip.durationInFrames / fps;
+      // Полтора кадра: проверяем ИМЕННО первый и последний кадр бита — именно
+      // они склеиваются с соседним битом.
+      const window = 1.5 / fps;
+      const head = await faceAt(clipFile, 0, window);
+      const tail = await faceAt(clipFile, Math.max(duration - window, 0), duration);
+      const at = (frames: number) => (frames / fps).toFixed(2);
+      if (!head.found) {
+        edgeProblems.push(
+          "  ! " + clip.id + ": в первом кадре бита (" + at(clipStart) +
+            " c ролика) нет лица — сдвиньте start вперёд или проверьте кадр глазами.",
+        );
+      } else if (head.nearest < FACE_EDGE) {
+        edgeProblems.push(
+          "  ! " + clip.id + ": в первом кадре бита (" + at(clipStart) +
+            " c ролика) лицо прижато к краю (" + head.nearest.toFixed(2) + " ширины) — герой обрезан.",
+        );
+      }
+      if (!tail.found) {
+        edgeProblems.push(
+          "  ! " + clip.id + ": в последнем кадре бита (" + at(clipStart + clip.durationInFrames) +
+            " c ролика) нет лица — подтяните end назад или проверьте кадр глазами.",
+        );
+      } else if (tail.nearest < FACE_EDGE) {
+        edgeProblems.push(
+          "  ! " + clip.id + ": в последнем кадре бита (" + at(clipStart + clip.durationInFrames) +
+            " c ролика) лицо прижато к краю (" + tail.nearest.toFixed(2) + " ширины) — герой обрезан.",
+        );
+      }
+    }
+  }
+  if (edgeProblems.length > 0) {
+    console.log("\nКрая битов без лица в кадре:");
+    for (const line of edgeProblems) console.log(line);
+  }
+
+
+  // --- Кадрирование на склейках оригинала ----------------------------------
+  // Самая дорогая ошибка рецепта: окно едет сквозь склейку, которую детектор с
+  // рабочим порогом не увидел, и один кадр нового плана оказывается кадрирован
+  // по-старому. На монтаже это читается как «мусорный кадр», а в контактные
+  // листы он не попадает — у них шаг в десятки кадров.
+  const panProblems: string[] = [];
+  const panSheets: { id: string; clipFile: string; frame: number }[] = [];
+  const scriptPath = path.resolve("src/compositions", comp, "script.ts");
+  if (existsSync(scriptPath)) {
+    const { SCRIPT } = (await import(pathToFileURL(scriptPath).href)) as {
+      SCRIPT: { id: string; film: string; start: number; end: number; pan?: PanPoint[] }[];
+    };
+    const trackPath = path.resolve("data/track", comp + ".json");
+    const tracks: Record<string, { pan: PanPoint[] }> = existsSync(trackPath)
+      ? JSON.parse(await readFile(trackPath, "utf8"))
+      : {};
+    let offset = 0;
+    for (const clip of clips) {
+      const beat = SCRIPT.find((b) => b.id === clip.id);
+      const clipFile = path.resolve("public", clip.file);
+      const clipStart = offset;
+      offset += clip.durationInFrames;
+      if (!beat || !existsSync(clipFile)) continue;
+      const points = beat.pan ?? tracks[beat.id]?.pan ?? [];
+      if (points.length < 2) continue;
+      const film = findFilm(beat.film);
+      const cuts = await sourceScenes(film.path, beat.start, beat.end - beat.start);
+      for (const cut of cuts) {
+        const kNew = Math.round(cut * fps);
+        if (kNew < 2 || kNew >= clip.durationInFrames - 1) continue;
+        const mid = (k: number) => (k + 0.5) / fps;
+        const xPrev = xAt(points, mid(kNew - 2), fps);
+        const xOld = xAt(points, mid(kNew - 1), fps);
+        const xNew = xAt(points, mid(kNew), fps);
+        const xNext = xAt(points, mid(kNew + 1), fps);
+        const step = Math.abs(xNew - xOld);
+        if (step >= PAN_STEP) continue;
+        let why = "";
+        if (Math.abs(xOld - xPrev) > PAN_STEP) why = "переброс окна стоит на кадр раньше склейки";
+        else if (Math.abs(xNext - xNew) > PAN_STEP) why = "переброс окна стоит на кадр позже склейки";
+        else if (Math.abs(xOld - xPrev) > PAN_STILL || Math.abs(xNext - xNew) > PAN_STILL)
+          why = "окно едет сквозь склейку — переброса нет";
+        if (!why) continue;
+        panProblems.push(
+          "  ! " + beat.id + ": склейка на " + (beat.start + cut).toFixed(2) +
+            " c исходника (" + ((clipStart + kNew) / fps).toFixed(2) + " c ролика) — " + why + ".",
+        );
+        panSheets.push({ id: beat.id, clipFile, frame: kNew });
+      }
+    }
+  }
+  if (panProblems.length > 0) {
+    console.log("\nКадрирование на склейках оригинала:");
+    for (const line of panProblems) console.log(line);
+    const sheetDir = path.resolve(outDir, "pan-cuts");
+    await mkdir(sheetDir, { recursive: true });
+    for (const item of panSheets) {
+      await run("ffmpeg", [
+        "-y", "-hide_banner", "-loglevel", "error",
+        "-i", item.clipFile,
+        "-vf", "select='between(n," + Math.max(item.frame - 2, 0) + "," + (item.frame + 2) + ")',scale=200:-1,tile=5x1",
+        "-frames:v", "1", "-vsync", "0",
+        path.join(sheetDir, item.id + "-" + item.frame + ".png"),
+      ]);
+    }
+    console.log(
+      "  Листы: " + path.relative(process.cwd(), sheetDir) +
+        " — по пять кадров вокруг склейки (два старого плана, три нового): кадрирование обязано меняться ровно между вторым и третьим.",
+    );
+  } else if (existsSync(scriptPath)) {
+    console.log("\nВсе склейки оригинала отработаны перебросом окна.");
   }
 
   if (problems.length > 0) {
