@@ -288,3 +288,26 @@ Music: "Backbay Lounge" by Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
+
+## scrum-music.mp3 — используется в композиции `ValleyScrum`
+
+- **Трек:** «Thief in the Night»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Thief%20in%20the%20Night.mp3
+
+Крадущийся джаз с контрабасом под сцену, где Джаред стравливает Динеша с
+Гилфойлом: музыка «плетёт интригу», не комментируя её. Подбирался замером полос
+(метод «The Builder»): низ (`lowpass=500`) −19.1 дБ, речь (`highpass=300,
+lowpass=3000`) −32.0, верх −41.3 — разрыв низ/речь 12.9 дБ, лучший из восьми
+кандидатов («Monkeys Spinning Monkeys» 7.1, «Sneaky Adventure» 6.4, «Fluffing a
+Duck» 4.8, «Scheming Weasel» 4.6, «Carefree» 2.2; «Local Forecast - Elevator»
+вообще сидит в речевой полосе). Огибающая ровная, −19 дБ на всей длине. В
+`public/` обрезан до 70 c (ролик 62 c, оригинал 185 c). Громкость 0.07 под
+речью, к панчу 0.14.
+
+```
+Music: "Thief in the Night" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```

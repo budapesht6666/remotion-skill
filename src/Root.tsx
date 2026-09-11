@@ -18,6 +18,7 @@ import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
 import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
 import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
 import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
+import { FPS as SCRUM_FPS } from "./compositions/ValleyScrum/script";
 import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
 import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
 import {
@@ -460,6 +461,50 @@ const opacity = interpolate(
           outroFrames: 60,
           subscribeLabel: "SUBSCRIBE",
           musicFile: "fish-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: «Скрам» — сцена s01e05 «Signaling Risk»: Джаред
+          внедряет скрам и стравливает Динеша с Гилфойлом; те раскусывают приём
+          и всё равно ведутся. Пятый монтаж на компоненте ValleyAuction.
+          Ролик держится на крупных планах и заканчивается улыбкой Ричарда и
+          Джареда — «система сработала».
+          Сборка: `npm run track -- ValleyScrum` → `npm run cut -- ValleyScrum`. */}
+      <Composition
+        id="ValleyScrum"
+        component={ValleyAuction}
+        durationInFrames={Math.round(62 * SCRUM_FPS)}
+        fps={SCRUM_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyScrum/clips.json",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          // Ноль: клип приезжает ровно 1080x1920, любой сдвиг открыл бы снизу
+          // чёрную полосу.
+          videoShiftY: 0,
+          // Панч — улыбка Ричарда и Джареда в последнем кадре сцены, поэтому
+          // призыв подписаться живёт в хвосте на стоп-кадре: 60 кадров ≈ 2.5 c.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "scrum-music.mp3",
           musicVolume: 0.07,
           musicPeakVolume: 0.14,
         }}

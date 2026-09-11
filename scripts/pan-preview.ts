@@ -15,11 +15,12 @@ import { mkdir, readdir, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { run } from "./lib/media";
-import { FORMAT } from "../src/lib/format";
+import { probe, run } from "./lib/media";
 
 type Clip = {
   id: string;
+  /** Путь клипа относительно public/ */
+  file: string;
   durationInFrames: number;
 };
 
@@ -56,7 +57,11 @@ async function main() {
   await mkdir(outDir, { recursive: true });
 
   for (const clip of clips) {
-    const duration = clip.durationInFrames / FORMAT.fps;
+    const source = path.resolve("public", clip.file);
+    // Длительность — у самого файла, а не `durationInFrames / FORMAT.fps`:
+    // нарезки чужого видео идут на родных 23.976, и деление на 30 показывало
+    // лишь первые 80 % бита — хвост с последним планом в лист не попадал.
+    const { duration } = await probe(source);
     const shots: string[] = [];
     // Последние кадры не снимаем: на самом хвосте ffmpeg возвращает пустоту,
     // и склейка листа падает на несуществующем файле.
@@ -65,7 +70,7 @@ async function main() {
       await run("ffmpeg", [
         "-y", "-hide_banner", "-loglevel", "error",
         "-ss", String(t),
-        "-i", path.resolve("public", `clips/${comp}/${clip.id}.mp4`),
+        "-i", source,
         "-frames:v", "1",
         "-vf", "scale=200:-2",
         file,
