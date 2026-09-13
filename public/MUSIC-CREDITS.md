@@ -311,3 +311,29 @@ Music: "Thief in the Night" by Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
+
+## kid-music.mp3 — используется в композиции `ValleyKid`
+
+- **Трек:** «Mischief Maker»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Mischief%20Maker.mp3
+
+Озорной «проказник» под сцену, где ребёнок-хулиган бьёт Ричарда, а Эрлих в
+халате идёт мстить. Подбирался замером полос (метод «The Builder») среди
+двенадцати кандидатов: низ (`lowpass=500`) −15.5 дБ, речь (`highpass=300,
+lowpass=3000`) −23.8, верх −33.2 — разрыв низ/речь 8.3 дБ. Больше разрыв
+только у «Dances and Dames» (15.5, свинг 20-х — слишком нарядный для уличной
+драки), «Spy Glass» (11.3 — крадущийся шпионский, повторил бы характер
+`scrum-music.mp3`) и «Bossa Antigua» (8.6, ленивая босса не держит темп сцены).
+Отвергнуты по замеру: «Comic Plodding» (−0.1), «Quirky Dog» (0.5), «Hyperfun»
+(2.6) — сидят прямо на голосе. Трек громкий (средний −15 дБ против −19 у
+«Thief in the Night»), поэтому громкость 0.05 под речью и 0.10 к панчу — на
+треть ниже обычных 0.07/0.14. Огибающая ровная. В `public/` обрезан до 58 c
+с фейдом (ролик 52 c, оригинал 202 c).
+
+```
+Music: "Mischief Maker" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```

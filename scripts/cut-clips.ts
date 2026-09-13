@@ -97,6 +97,14 @@ export type Beat = {
    * `from`/`to` — секунды от начала бита, по умолчанию весь бит.
    */
   blur?: { x: number; y: number; w: number; h: number; from?: number; to?: number }[];
+  /**
+   * Хвост звука за концом бита, секунды — только у ПОСЛЕДНЕГО бита. Нужен,
+   * когда последнее слово договаривается уже под следующей сценой (J-cut):
+   * кадр обрывается на склейке, а звук в `audio.m4a` тянется дальше и
+   * ложится под стоп-кадр концовки. У промежуточного бита сломал бы синхрон,
+   * поэтому там запрещён.
+   */
+  audioTail?: number;
 };
 
 /**
@@ -581,7 +589,11 @@ async function buildAudioTrack(
     if (!beat) continue;
     const film = findFilm(beat.film);
     const slow = beat.slow ?? 1;
-    const dur = meta.durationInFrames / fps;
+    const tail = beat.audioTail ?? 0;
+    if (tail > 0 && meta !== metas[metas.length - 1]) {
+      throw new Error(`Бит ${beat.id}: audioTail допустим только у последнего бита`);
+    }
+    const dur = meta.durationInFrames / fps + tail;
     const part = path.join(tmp, `${meta.id}.wav`);
     if (beat.subs === "source") anySource = true;
     const killDialogue = Boolean(beat.line) && !beat.keepDialogue;

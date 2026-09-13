@@ -349,10 +349,12 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
         );
       })}
 
-      {/* Оригинальная дорожка одним файлом — ровно на длину монтажа, стоп-кадр
-          концовки звука не имеет. */}
+      {/* Оригинальная дорожка одним файлом. Секвенция тянется и на концовку:
+          сам файл кончается вместе с монтажом, а если у последнего бита есть
+          `audioTail` (слово договаривается за склейкой, ValleyKid), хвост
+          звучит под стоп-кадром. */}
       {audioFile ? (
-        <Sequence from={0} durationInFrames={Math.max(totalClipFrames, 1)} name="audio">
+        <Sequence durationInFrames={Math.max(totalClipFrames + outroFrames, 1)} name="audio">
           <Audio src={staticFile(audioFile)} />
         </Sequence>
       ) : null}

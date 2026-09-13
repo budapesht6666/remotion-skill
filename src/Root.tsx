@@ -20,6 +20,7 @@ import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
 import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
 import { FPS as SCRUM_FPS } from "./compositions/ValleyScrum/script";
 import { FPS as MURAL_FPS } from "./compositions/ValleyMural/script";
+import { FPS as KID_FPS } from "./compositions/ValleyKid/script";
 import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
 import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
 import {
@@ -556,6 +557,57 @@ const opacity = interpolate(
           musicFile: "",
           musicVolume: 0,
           musicPeakVolume: 0,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Кремниевая долина»: «Мелкий» — s01e06 «Third Party Insourcing»:
+          ребёнок-дилер бьёт Ричарда и гонит прочь, Ричард плачет, Эрлих в
+          халате идёт мстить — затрещина, велосипед в кусты, угрозы, «Пять
+          штук, живо». Седьмой монтаж на компоненте ValleyAuction, 52 c, из двух
+          разнесённых кусков серии (21:28 и 22:28). Музыка «Mischief Maker».
+          Сборка: `npm run track -- ValleyKid` → `npm run cut -- ValleyKid`. */}
+      <Composition
+        id="ValleyKid"
+        component={ValleyAuction}
+        durationInFrames={Math.round(55 * KID_FPS)}
+        fps={KID_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyKid/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс
+          // звука клипов, слышно как провал на каждой склейке битов. Здесь же
+          // дорожка на 0.25 c длиннее монтажа: «Простите» договаривается под
+          // стоп-кадром концовки (audioTail в script.ts).
+          audioFile: "clips/ValleyKid/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          // Ноль: клип приезжает ровно 1080x1920, любой сдвиг открыл бы снизу
+          // чёрную полосу.
+          videoShiftY: 0,
+          // Панч — ребёнок убегает с криком «Простите» в последнем кадре сцены,
+          // призыв подписаться живёт в хвосте на стоп-кадре: 60 кадров ≈ 2.5 c.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // Трек громче обычных (−15 дБ против −19), поэтому 0.05/0.10 вместо
+          // 0.07/0.14 — см. public/MUSIC-CREDITS.md.
+          musicFile: "kid-music.mp3",
+          musicVolume: 0.05,
+          musicPeakVolume: 0.1,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));
