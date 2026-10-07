@@ -38,6 +38,11 @@ import { whiteboardSchema, type WhiteboardSchema } from "./compositions/Whiteboa
 import type { BoardManifest as WhiteboardManifest } from "./compositions/Whiteboard/types";
 import { DiverBotAd } from "./compositions/DiverBotAd/DiverBotAd";
 import { diverBotAdSchema, type DiverBotAdSchema } from "./compositions/DiverBotAd/schema";
+import {
+  SpaceFlightShort,
+  type SpaceFlightShortProps,
+} from "./compositions/SpaceFlightShort/SpaceFlightShort";
+import type { GameCutManifest } from "./compositions/SpaceFlightShort/timeline";
 import type { AdManifest } from "./compositions/DiverBotAd/types";
 
 /**
@@ -89,6 +94,14 @@ const loadAd: CalculateMetadataFunction<DiverBotAdSchema> = async ({ props }) =>
       shots: manifest.shots,
     },
   };
+};
+
+/** SpaceFlightShort: таймлайн, длительность и fps — из манифеста `npm run gamecut`. */
+const loadGameCut: CalculateMetadataFunction<SpaceFlightShortProps> = async ({ props }) => {
+  const res = await fetch(staticFile(props.editFile));
+  if (!res.ok) return { durationInFrames: 60, props };
+  const edit = (await res.json()) as GameCutManifest;
+  return { durationInFrames: edit.durationInFrames, fps: edit.fps, props: { ...props, edit } };
 };
 
 /**
@@ -1060,6 +1073,31 @@ const opacity = interpolate(
           shots: [],
         }}
         calculateMetadata={loadAd}
+      />
+
+      {/* Шортс по своей игре Space Flight: геймплей, снятый самой игрой на 60 к/с,
+          монтаж в такт её музыке, панчи на ударах из лога событий. Сборка:
+          `npm run gamecut -- SpaceFlightShort` → public/clips/SpaceFlightShort/
+          (клипы, edit.json с таймлайном, audio.wav). Длительность и fps — из edit.json. */}
+      <Composition
+        id="SpaceFlightShort"
+        component={SpaceFlightShort}
+        durationInFrames={1215}
+        fps={60}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          editFile: "clips/SpaceFlightShort/edit.json",
+          hookKicker: "I MADE A",
+          hookBig: "SPACE SHOOTER",
+          browserKicker: "THAT RUNS IN YOUR",
+          browserBig: "BROWSER",
+          challengeKicker: "CAN YOU",
+          challengeBig: "BEAT IT?",
+          ctaMain: "PLAY FREE",
+          ctaSub: "LINK IN COMMENTS",
+        }}
+        calculateMetadata={loadGameCut}
       />
     </>
   );

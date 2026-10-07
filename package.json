@@ -31,7 +31,8 @@
     "board": "tsx scripts/compile-board.ts",
     "pan": "tsx scripts/pan-preview.ts",
     "track": "tsx scripts/track-faces.ts",
-    "joins": "tsx scripts/check-joins.ts"
+    "joins": "tsx scripts/check-joins.ts",
+    "gamecut": "tsx scripts/game-cut.ts"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",
