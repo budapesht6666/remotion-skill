@@ -1,0 +1,30 @@
+{
+  "fps": 30,
+  "srcDir": "me/dog-walk/src",
+  "outDir": "public/clips/DogWalk",
+  "shots": [
+    { "id": "hook", "src": "IMG_3046.MOV", "from": 7.6, "to": 9.0, "live": 1.8 },
+    { "id": "hookFreeze", "src": "IMG_3046.MOV", "freeze": 9.0, "dur": 1.7, "live": 1.8 },
+    { "id": "rewind", "src": "IMG_3046.MOV", "from": 0.0, "to": 9.0, "reverse": true, "dur": 0.75 },
+    { "id": "selfie", "photo": "IMG_3043.HEIC", "dur": 2.3 },
+    { "id": "street1", "src": "IMG_3048.MOV", "from": 0.0, "to": 3.0, "speed": 3 },
+    { "id": "street2", "src": "IMG_3055.MOV", "from": 0.0, "to": 2.4, "speed": 2.4 },
+    { "id": "street3", "src": "IMG_3053.MOV", "from": 0.0, "to": 2.7, "speed": 3 },
+    { "id": "nietzsche", "src": "IMG_3046.MOV", "from": 0.0, "to": 2.6, "live": 1.8 },
+    { "id": "nietzscheCard", "src": "IMG_3046.MOV", "freeze": 2.6, "dur": 1.8 },
+    { "id": "chaos", "src": "IMG_3046.MOV", "from": 2.6, "to": 7.5, "live": 1.8 },
+    { "id": "slam", "src": "IMG_3046.MOV", "from": 8.1, "to": 9.2, "speed": 0.5, "live": 1.6, "pitch": 0.5 },
+    { "id": "hug", "src": "IMG_3046.MOV", "from": 10.0, "to": 12.9, "live": 1.8 },
+    { "id": "beg", "src": "IMG_3044.MOV", "from": 1.2, "to": 4.6, "live": 2.2 },
+    { "id": "hop", "src": "IMG_3045.MOV", "from": 0.0, "to": 1.2, "live": 1.5 },
+    { "id": "jump", "src": "IMG_3044.MOV", "from": 6.9, "to": 8.7, "speed": 0.5 },
+    { "id": "woodpecker", "src": "IMG_3050.MOV", "from": 0.0, "to": 2.4, "live": 2.2 },
+    { "id": "woodpeckerCard", "src": "IMG_3050.MOV", "freeze": 2.4, "dur": 1.6 },
+    { "id": "bag", "src": "IMG_3051.MOV", "from": 0.0, "to": 3.0, "live": 1.5 },
+    { "id": "leaves", "src": "IMG_3051.MOV", "from": 3.0, "to": 6.5, "speed": 1.6 },
+    { "id": "lemons", "photo": "IMG_3040.HEIC", "dur": 0.9 },
+    { "id": "pomelo", "photo": "IMG_3041.HEIC", "dur": 0.9 },
+    { "id": "lanterns", "photo": "IMG_3039.HEIC", "dur": 0.9 },
+    { "id": "ending", "src": "IMG_3044.MOV", "from": 8.7, "to": 11.7, "live": 1.8 }
+  ]
+}

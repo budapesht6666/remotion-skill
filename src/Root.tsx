@@ -44,6 +44,18 @@ import {
 } from "./compositions/SpaceFlightShort/SpaceFlightShort";
 import type { GameCutManifest } from "./compositions/SpaceFlightShort/timeline";
 import type { AdManifest } from "./compositions/DiverBotAd/types";
+import {
+  DogWalk,
+  TOTAL_FRAMES as DOGWALK_FRAMES,
+  type DogWalkProps,
+  type VoPhrase,
+} from "./compositions/DogWalk/DogWalk";
+import {
+  DogWalkRitchie,
+  TOTAL_FRAMES as RITCHIE_FRAMES,
+  type DogWalkRitchieProps,
+  type VoPhrase as RitchieVoPhrase,
+} from "./compositions/DogWalkRitchie/DogWalkRitchie";
 
 /**
  * Общий загрузчик доски для всех композиций на рецепте Whiteboard: контуры
@@ -94,6 +106,20 @@ const loadAd: CalculateMetadataFunction<DiverBotAdSchema> = async ({ props }) =>
       shots: manifest.shots,
     },
   };
+};
+
+/** DogWalkVO: фразы закадра с длительностями — из vo.json, который пишет dogwalk-vo.py. */
+const loadDogWalkVo: CalculateMetadataFunction<DogWalkProps> = async ({ props }) => {
+  const res = await fetch(staticFile("clips/DogWalk/vo.json"));
+  if (!res.ok) return { props };
+  return { props: { ...props, vo: (await res.json()) as VoPhrase[] } };
+};
+
+/** DogWalkRitchie: закадр рассказчика из vo.json (`python scripts/dogwalk-vo.py DogWalkRitchie`). */
+const loadRitchieVo: CalculateMetadataFunction<DogWalkRitchieProps> = async ({ props }) => {
+  const res = await fetch(staticFile("clips/DogWalkRitchie/vo.json"));
+  if (!res.ok) return { props };
+  return { props: { ...props, vo: (await res.json()) as RitchieVoPhrase[] } };
 };
 
 /** SpaceFlightShort: таймлайн, длительность и fps — из манифеста `npm run gamecut`. */
@@ -1098,6 +1124,45 @@ const opacity = interpolate(
           ctaSub: "LINK IN COMMENTS",
         }}
         calculateMetadata={loadGameCut}
+      />
+
+      {/* Шортс из своих съёмок: прогулка под дождём и уличные собаки Ницше и Дятел.
+          Копии исходников режет `python scripts/dogwalk-prep.py` (монтажный лист
+          edit.json), звуки — `python scripts/dogwalk-sfx.py`, всё в public/clips/DogWalk/.
+          Две версии: без голоса и с закадром клона рассказчика (vo.json). */}
+      <Composition
+        id="DogWalk"
+        component={DogWalk}
+        durationInFrames={DOGWALK_FRAMES}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{ vo: [] }}
+      />
+      <Composition
+        id="DogWalkVO"
+        component={DogWalk}
+        durationInFrames={DOGWALK_FRAMES}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{ vo: [] }}
+        calculateMetadata={loadDogWalkVo}
+      />
+
+      {/* Та же прогулка криминальной комедией в духе Гая Ричи: рассказчик, грейд,
+          стоп-кадры с представлением героев. Копии — `python scripts/dogwalk-prep.py
+          DogWalkRitchie`, вырезка героев — PhotoCraft + `scripts/dogwalk-cutout.py`,
+          звуки — `dogwalk-sfx.py DogWalkRitchie`, голос — `dogwalk-vo.py DogWalkRitchie`. */}
+      <Composition
+        id="DogWalkRitchie"
+        component={DogWalkRitchie}
+        durationInFrames={RITCHIE_FRAMES}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{ vo: [] }}
+        calculateMetadata={loadRitchieVo}
       />
     </>
   );

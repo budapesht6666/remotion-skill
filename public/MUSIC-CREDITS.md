@@ -337,3 +337,30 @@ Music: "Mischief Maker" by Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
+
+## clips/DogWalk/sfx/music.wav — используется в композициях `DogWalk` и `DogWalkVO`
+
+- **Трек:** «Monkeys Spinning Monkeys»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** локальная библиотека канала (`ArtCraft/channel/local/music/`), собирает
+  `python scripts/dogwalk-sfx.py`; из него же синтезированы остановка ленты и перемотка.
+
+Весёлая «мультяшная» подложка под ролик про собак: узнаваемый трек, зритель с первых
+нот понимает, что будет смешно. Громкость 0.2, под живые реплики и голос — 0.07.
+
+```
+Music: "Monkeys Spinning Monkeys" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## clips/DogWalkRitchie/sfx/music.wav — используется в композиции `DogWalkRitchie`
+
+- **Трек:** без названия, сгенерирован Google Lyria (`lyria-3-pro-preview`, Gemini API) 2026-10-28
+- **Промпт:** британская криминальная комедия конца 90-х — грязный фанк-рок, wah-гитара, орган
+  Хаммонд, слэп-бас, брейки, 98 BPM, без вокала.
+- **Атрибуция:** не требуется. Исходник лежит локально в `me/dog-walk/ritchie/music/lyria_b.mp3`.
+
+Выбран из двух вариантов Lyria и «Scheming Weasel» (Kevin MacLeod) сравнением в Gemini: у него
+разрежённая середина, рассказчик слышен без глубокого провала музыки. Громкость 0.24, под голос 0.10.
