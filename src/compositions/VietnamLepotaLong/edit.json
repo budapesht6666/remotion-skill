@@ -1,0 +1,39 @@
+{
+  "fps": 30,
+  "srcDir": "me/vietnam-barbecue-2",
+  "outDir": "public/clips/VietnamLepotaLong",
+  "grade": "eq=saturation=1.38:contrast=1.05:gamma=0.98",
+  "shots": [
+    { "id": "boat", "src": "src/IMG_2947.MOV", "from": 13.0, "to": 13.9, "move": [1.0, 1.06], "origin": "50% 55%" },
+    { "id": "pagoda", "src": "src/IMG_2928.MOV", "from": 1.0, "to": 2.8, "speed": 2, "move": [1.02, 1.08], "origin": "50% 40%" },
+    { "id": "temple", "photo": "photos/IMG_3088.jpg", "dur": 1.4, "focus": [0.8, 0.5], "move": [1.0, 1.14], "origin": "62% 52%" },
+    { "id": "grill", "src": "src/IMG_3093.MOV", "from": 0.0, "to": 1.8, "move": [1.0, 1.0], "origin": "45% 70%" },
+    { "id": "selfie", "src": "src/IMG_3090.MOV", "from": 0.2, "to": 3.0, "live": 1, "move": [1.0, 1.05], "origin": "50% 35%" },
+    { "id": "flip", "src": "src/IMG_2940.MOV", "from": 0.0, "to": 4.0, "speed": 2, "move": [1.04, 1.1], "origin": "55% 45%" },
+    { "id": "chill", "src": "src/IMG_3084.MOV", "from": 2.7, "to": 7.4, "live": 1, "move": [1.0, 1.04], "origin": "62% 30%" },
+    { "id": "done", "src": "src/IMG_2940.MOV", "from": 7.0, "to": 9.0, "move": [1.05, 1.12], "origin": "50% 55%" },
+    { "id": "mountain", "photo": "photos/IMG_3087.jpg", "dur": 1.5, "focus": [0.45, 0.5], "move": [1.0, 1.0], "origin": "45% 40%" },
+    { "id": "finale", "src": "src/IMG_2928.MOV", "from": 3.0, "to": 4.5, "move": [1.0, 1.05], "origin": "50% 40%" }
+  ],
+  "lepota": [
+    { "shot": "grill", "at": 0.07, "part": "full", "until": "grill" },
+    { "shot": "mountain", "at": 0.07, "part": "word", "until": "finale" }
+  ],
+  "beds": [
+    { "file": "birds", "from": "boat", "to": "temple", "volume": 0.3 },
+    { "file": "bells", "from": "boat", "to": "temple", "volume": 0.35 },
+    { "file": "sizzle", "from": "grill", "to": "grill", "volume": 0.9 },
+    { "file": "sizzle", "from": "flip", "to": "flip", "volume": 0.7, "skip": 2 },
+    { "file": "sizzle", "from": "done", "to": "done", "volume": 0.8, "skip": 5 },
+    { "file": "birds", "from": "mountain", "to": "finale", "volume": 0.3, "skip": 4 },
+    { "file": "bells", "from": "mountain", "to": "finale", "volume": 0.35, "skip": 3 }
+  ],
+  "subs": [
+    { "shot": "selfie", "from": 0.3, "to": 1.58, "text": "Вторая серия." },
+    { "shot": "selfie", "from": 1.58, "to": 3.0, "text": "Вьетнамский шашлык." },
+    { "shot": "chill", "from": 2.9, "to": 3.9, "text": "Пока мы отдыхаем," },
+    { "shot": "chill", "from": 3.9, "to": 5.88, "text": "Татьяна жарит шашлык." },
+    { "shot": "chill", "from": 5.88, "to": 7.15, "text": "Круто." }
+  ],
+  "titles": [{ "shot": "done", "at": 0.0, "dur": 2.0, "text": "Час спустя…" }]
+}

@@ -1,0 +1,21 @@
+{
+  "fps": 30,
+  "srcDir": "me/vietnam-barbecue-2",
+  "outDir": "public/clips/VietnamLepota",
+  "grade": "eq=saturation=1.38:contrast=1.05:gamma=0.98",
+  "shots": [
+    { "id": "boat", "src": "src/IMG_2947.MOV", "from": 13.0, "to": 13.9, "move": [1.0, 1.06], "origin": "50% 55%" },
+    { "id": "pagoda", "src": "src/IMG_2928.MOV", "from": 1.0, "to": 2.8, "speed": 2, "move": [1.02, 1.08], "origin": "50% 40%" },
+    { "id": "temple", "photo": "photos/IMG_3088.jpg", "dur": 1.4, "focus": [0.8, 0.5], "move": [1.0, 1.14], "origin": "62% 52%" },
+    { "id": "grill", "src": "src/IMG_3093.MOV", "from": 0.0, "to": 1.6, "move": [1.0, 1.0], "origin": "45% 70%" },
+    { "id": "meat", "src": "src/IMG_2940.MOV", "from": 4.0, "to": 5.6, "move": [1.04, 1.1], "origin": "55% 45%" }
+  ],
+  "lepota": [{ "shot": "grill", "at": 0.07, "part": "full", "until": "meat" }],
+  "beds": [
+    { "file": "birds", "from": "boat", "to": "temple", "volume": 0.3 },
+    { "file": "bells", "from": "boat", "to": "temple", "volume": 0.35 },
+    { "file": "sizzle", "from": "grill", "to": "meat", "volume": 0.9 }
+  ],
+  "subs": [],
+  "titles": []
+}

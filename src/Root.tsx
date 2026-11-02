@@ -56,6 +56,7 @@ import {
   type DogWalkRitchieProps,
   type VoPhrase as RitchieVoPhrase,
 } from "./compositions/DogWalkRitchie/DogWalkRitchie";
+import { VietnamLepota, totalFrames as lepotaFrames } from "./compositions/VietnamLepota/VietnamLepota";
 
 /**
  * Общий загрузчик доски для всех композиций на рецепте Whiteboard: контуры
@@ -1163,6 +1164,28 @@ const opacity = interpolate(
         height={FORMAT.height}
         defaultProps={{ vo: [] }}
         calculateMetadata={loadRitchieVo}
+      />
+
+      {/* Мем «Красота-то какая! Лепота!» на Вьетнаме: виды → шашлык, 6.4 c по кругу;
+          длинный монтаж ~21 c — та же фраза трижды. Монтаж — edit.json каждой композиции,
+          копии — `python scripts/dogwalk-prep.py <Комп>`, звук — `python scripts/lepota-audio.py <Комп>`. */}
+      <Composition
+        id="VietnamLepota"
+        component={VietnamLepota}
+        durationInFrames={lepotaFrames("VietnamLepota")}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{ cut: "VietnamLepota" as const }}
+      />
+      <Composition
+        id="VietnamLepotaLong"
+        component={VietnamLepota}
+        durationInFrames={lepotaFrames("VietnamLepotaLong")}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{ cut: "VietnamLepotaLong" as const }}
       />
     </>
   );
