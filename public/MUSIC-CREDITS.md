@@ -289,7 +289,7 @@ Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
 
-## scrum-music.mp3 — используется в композиции `ValleyScrum`
+## scrum-music.mp3 — используется в композициях `ValleyScrum` и `ValleyCode`
 
 - **Трек:** «Thief in the Night»
 - **Автор:** Kevin MacLeod (incompetech.com)

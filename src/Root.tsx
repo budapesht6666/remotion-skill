@@ -21,6 +21,7 @@ import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
 import { FPS as SCRUM_FPS } from "./compositions/ValleyScrum/script";
 import { FPS as MURAL_FPS } from "./compositions/ValleyMural/script";
 import { FPS as KID_FPS } from "./compositions/ValleyKid/script";
+import { FPS as CODE_FPS } from "./compositions/ValleyCode/script";
 import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
 import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
 import {
@@ -648,6 +649,47 @@ const opacity = interpolate(
           musicFile: "kid-music.mp3",
           musicVolume: 0.05,
           musicPeakVolume: 0.1,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+                  {/* «Программный гей» — нарезка «Кремниевой долины» s01e07 на компоненте
+          ValleyAuction: развязка через `clipsFile`, свой script.ts и своя папка
+          public/clips/. Динеш влюбился в джава-метод девушки, а метод написал
+          Гилфойл. Сборка: `npm run track -- ValleyCode` → `npm run cut -- ValleyCode`. */}
+      <Composition
+        id="ValleyCode"
+        component={ValleyAuction}
+        durationInFrames={Math.round(63 * CODE_FPS)}
+        fps={CODE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyCode/clips.json",
+          audioFile: "clips/ValleyCode/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // Тот же крадущийся джаз, что у ValleyScrum: та же пара героев, а
+          // ValleyScrum на канале нет (блок HBO), трек зритель не слышал.
+          musicFile: "scrum-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));
