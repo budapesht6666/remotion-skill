@@ -364,3 +364,23 @@ https://creativecommons.org/licenses/by/4.0/
 
 Выбран из двух вариантов Lyria и «Scheming Weasel» (Kevin MacLeod) сравнением в Gemini: у него
 разрежённая середина, рассказчик слышен без глубокого провала музыки. Громкость 0.24, под голос 0.10.
+
+## middle-music.mp3 — используется в композиции `ValleyMiddleOut`
+
+- **Трек:** «Sneaky Snitch»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3
+
+Крадущийся комедийный трек под серьёзный расчёт несерьёзной задачи. Подбирался
+замером полос среди пяти кандидатов: низ −18.7 дБ, речь −29.1, разрыв 10.4 дБ.
+Отвергнуты «Monkeys Spinning Monkeys» (7.1, слишком детский), «Hidden Agenda» (3.0),
+«Thinking Music» (3.5), «Marty Gots a Plan» (2.4): сидят ближе к голосу. Средний
+уровень −18.5 дБ, как у «Thief in the Night», поэтому обычные 0.07 под речью и 0.14
+к панчу.
+
+```
+Music: "Sneaky Snitch" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```

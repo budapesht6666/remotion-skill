@@ -21,6 +21,7 @@ import { FPS as FISH_FPS } from "./compositions/ValleyFish/script";
 import { FPS as SCRUM_FPS } from "./compositions/ValleyScrum/script";
 import { FPS as MURAL_FPS } from "./compositions/ValleyMural/script";
 import { FPS as KID_FPS } from "./compositions/ValleyKid/script";
+import { FPS as MIDDLE_FPS } from "./compositions/ValleyMiddleOut/script";
 import { FPS as CODE_FPS } from "./compositions/ValleyCode/script";
 import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
 import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
@@ -664,7 +665,53 @@ const opacity = interpolate(
         }}
       />
 
-                  {/* «Программный гей» — нарезка «Кремниевой долины» s01e07 на компоненте
+      {/* «Из центра наружу» — s01e08 «Optimal Tip-to-Tip Efficiency»: серьёзный
+          расчёт, сколько времени нужно, чтобы подрочить всему залу, и рождённый
+          из него алгоритм. Три куска серии (12:43, 21:13, 25:42). Музыка
+          «Sneaky Snitch».
+          Сборка: `npm run track -- ValleyMiddleOut` → `npm run cut -- ValleyMiddleOut`. */}
+      <Composition
+        id="ValleyMiddleOut"
+        component={ValleyAuction}
+        durationInFrames={Math.round(78 * MIDDLE_FPS)}
+        fps={MIDDLE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyMiddleOut/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс
+          // звука клипов.
+          audioFile: "clips/ValleyMiddleOut/audio.m4a",
+          accent: "#ffd23f",
+          showCaptions: true,
+          videoScale: 1,
+          // Ноль: клип приезжает ровно 1080x1920, любой сдвиг открыл бы снизу
+          // чёрную полосу.
+          videoShiftY: 0,
+          // Панч «И могу это доказать» договаривает до последнего кадра плана,
+          // призыв подписаться живёт в хвосте на стоп-кадре: 60 кадров ≈ 2.5 c.
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "middle-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+            {/* «Программный гей» — нарезка «Кремниевой долины» s01e07 на компоненте
           ValleyAuction: развязка через `clipsFile`, свой script.ts и своя папка
           public/clips/. Динеш влюбился в джава-метод девушки, а метод написал
           Гилфойл. Сборка: `npm run track -- ValleyCode` → `npm run cut -- ValleyCode`. */}
