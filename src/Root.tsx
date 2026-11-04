@@ -711,7 +711,45 @@ const opacity = interpolate(
         }}
       />
 
-            {/* «Программный гей» — нарезка «Кремниевой долины» s01e07 на компоненте
+      {/* Та же дорожка и те же субтитры, что у `ValleyMiddleOut`, но в кадре только
+          планы с доской из серии: основной монтаж заблокирован Content ID.
+          Сборка: `npm run cut -- ValleyMiddleOutBoard`. */}
+      <Composition
+        id="ValleyMiddleOutBoard"
+        component={ValleyAuction}
+        durationInFrames={Math.round(78 * MIDDLE_FPS)}
+        fps={MIDDLE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyMiddleOutBoard/clips.json",
+          audioFile: "clips/ValleyMiddleOut/audio.m4a",
+          accent: "#ffd23f",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "middle-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Программный гей» — нарезка «Кремниевой долины» s01e07 на компоненте
           ValleyAuction: развязка через `clipsFile`, свой script.ts и своя папка
           public/clips/. Динеш влюбился в джава-метод девушки, а метод написал
           Гилфойл. Сборка: `npm run track -- ValleyCode` → `npm run cut -- ValleyCode`. */}
