@@ -290,9 +290,15 @@ async function main() {
     console.error(`Нет сценария: ${scriptPath}`);
     process.exit(1);
   }
-  const { SCRIPT, FPS } = (await import(pathToFileURL(scriptPath).href)) as {
+  const { SCRIPT, FPS, AUDIO_FROM } = (await import(pathToFileURL(scriptPath).href)) as {
     SCRIPT: Beat[];
     FPS?: number;
+    /**
+     * Композиция, чьи дорожка и субтитры идут под этот монтаж: другая картинка
+     * под тот же звук. Своей дорожки тогда нет, слова раскладываются по новым
+     * клипам по времени, а общая длина обязана совпасть до кадра.
+     */
+    AUDIO_FROM?: string;
   };
   // Кадровая частота ролика. Если исходник снят в 23.976, приведение к 30
   // дублирует каждый пятый кадр — на панорамировании это читается как
@@ -542,9 +548,12 @@ async function main() {
     ? SCRIPT.map((b) => metas.find((m) => m.id === b.id) ?? previous.find((m) => m.id === b.id))
         .filter((m): m is ClipMeta => Boolean(m))
     : metas;
+  if (AUDIO_FROM) {
+    await borrowCaptions(AUDIO_FROM, merged, fps);
+  } else {
+    await buildAudioTrack(SCRIPT, outDir, merged, fps);
+  }
   await writeFile(metaPath, JSON.stringify(merged, null, 2), "utf8");
-
-  await buildAudioTrack(SCRIPT, outDir, merged, fps);
 
   const total = merged.reduce((s, m) => s + m.durationInFrames, 0);
   console.log(
@@ -638,7 +647,10 @@ async function buildAudioTrack(
     "-y", "-hide_banner", "-loglevel", "error",
     ...parts.flatMap((f) => ["-i", f]),
     "-filter_complex",
-    `${parts.map((_, i) => `[${i}:a]`).join("")}concat=n=${parts.length}:v=0:a=1,loudnorm=${target}[a]`,
+    // Звук рендера отстаёт на 2048 сэмплов (см. RENDER_AUDIO_DELAY в game-cut.ts):
+    // дорожка заранее сдвигается раньше, длина сохраняется.
+    `${parts.map((_, i) => `[${i}:a]`).join("")}concat=n=${parts.length}:v=0:a=1,` +
+      `atrim=start_sample=2048,asetpts=N/SR/TB,apad=pad_len=2048,loudnorm=${target}[a]`,
     "-map", "[a]",
     "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
     "-movflags", "+faststart",
@@ -646,6 +658,38 @@ async function buildAudioTrack(
   ]);
   await rm(tmp, { recursive: true, force: true });
   console.log(`Дорожка: ${out}`);
+}
+
+/**
+ * Субтитры чужого монтажа на новых клипах: слово достаётся клипу, в котором
+ * начинается. Разойдись длины — звук поедет относительно картинки и концовки,
+ * поэтому это ошибка, а не предупреждение.
+ */
+async function borrowCaptions(from: string, clips: ClipMeta[], fps: number): Promise<void> {
+  const source = JSON.parse(
+    await readFile(path.resolve("public/clips", from, "clips.json"), "utf8"),
+  ) as ClipMeta[];
+  const frames = (list: ClipMeta[]) => list.reduce((s, c) => s + c.durationInFrames, 0);
+  if (frames(source) !== frames(clips)) {
+    throw new Error(`Длина монтажа ${frames(clips)} кадров, у дорожки ${from} — ${frames(source)}`);
+  }
+  let cursor = 0;
+  const timeline = source.flatMap((clip) => {
+    const offset = cursor / fps;
+    cursor += clip.durationInFrames;
+    return clip.words.map((w) => ({ ...w, s: w.s + offset, e: w.e + offset }));
+  });
+  cursor = 0;
+  for (const clip of clips) {
+    const from_ = cursor / fps;
+    cursor += clip.durationInFrames;
+    const to = cursor / fps;
+    clip.words = timeline
+      .filter((w) => w.s >= from_ && w.s < to)
+      .map((w) => ({ ...w, s: w.s - from_, e: w.e - from_ }));
+    clip.caption = clip.words.map((w) => w.w).join(" ") || null;
+    clip.originalVolume = 1;
+  }
 }
 
 main().catch((err) => {

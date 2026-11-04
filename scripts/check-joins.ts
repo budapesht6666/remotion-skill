@@ -344,11 +344,11 @@ async function main() {
   await rm(outDir, { recursive: true, force: true });
   await mkdir(outDir, { recursive: true });
 
-  const selected: number[] = [];
-  for (const b of bounds) {
-    for (let d = -around; d < around; d++) selected.push(b.at + d);
-  }
-  const select = selected.map((n) => `eq(n\\,${n})`).join("+");
+  // Диапазоны, а не перечень кадров: на 25 битах перечень не влезал в выражение
+  // ffmpeg, и лист падал с «Cannot allocate memory» (ValleyMiddleOutBoard).
+  const select = bounds
+    .map((b) => `between(n\\,${b.at - around}\\,${b.at + around - 1})`)
+    .join("+");
   const sheet = path.join(outDir, "joins.png");
   await run("ffmpeg", [
     "-v", "error", "-y",

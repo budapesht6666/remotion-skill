@@ -53,6 +53,9 @@ const PROFANITY = [
  */
 export function maskProfanity(text: string): string {
   return text.replace(/[А-Яа-яЁёA-Za-z]+/g, (token) => {
+    // Не мат, но охват режет так же. Прячем одну гласную, а не всё слово: на
+    // ValleyMiddleOut оно звучит в каждой реплике, и без него субтитр не читается.
+    if (/дроч/i.test(token)) return token.replace(/(др)о(ч)/i, "$1*$2");
     if (!PROFANITY.some((re) => re.test(token))) return token;
     return token[0] + "*".repeat(token.length - 1);
   });
