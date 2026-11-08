@@ -1,8 +1,9 @@
 import "./index.css";
 import React from "react";
-import { Composition, staticFile, type CalculateMetadataFunction } from "remotion";
+import { Composition, Still, staticFile, type CalculateMetadataFunction } from "remotion";
 import { FORMAT, seconds } from "./lib/format";
 import { LaosStyle, LAOS_STYLE_FRAMES } from "./compositions/LaosVisa/LaosStyle";
+import { LaosThumb } from "./compositions/LaosVisa/LaosThumb";
 import { LaosVisa, type LaosVisaProps, type Timeline as LaosTimeline } from "./compositions/LaosVisa/LaosVisa";
 import { KineticText } from "./compositions/KineticText/KineticText";
 import { CaptionedVideo } from "./compositions/CaptionedVideo/CaptionedVideo";
@@ -1336,6 +1337,7 @@ const opacity = interpolate(
         defaultProps={{ timeline: null } as LaosVisaProps}
         calculateMetadata={loadLaosTimeline}
       />
+      <Still id="LaosThumb" component={LaosThumb} width={1280} height={720} />
       <Composition id="LaosStyle" component={LaosStyle} durationInFrames={LAOS_STYLE_FRAMES} fps={30} width={1920} height={1080} />
     </>
   );

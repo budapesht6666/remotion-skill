@@ -247,8 +247,9 @@ export type ReceiptLine = { label: string; value: number; hidden?: boolean };
 const money = (v: number) => v.toLocaleString("ru-RU").replace(/,/g, " ");
 
 export const Receipt: React.FC<{ lines: ReceiptLine[]; before: number; stamp: string; instant?: boolean; reveal?: boolean }> = ({ lines, before, stamp, instant, reveal }) => {
-  const f = useCurrentFrame() + (instant ? 400 : 0);
-  const rv = reveal ? interpolate(useCurrentFrame(), [10, 22], [0, 1], clamp) : 0;
+  const frame = useCurrentFrame();
+  const f = frame + (instant ? 400 : 0);
+  const rv = reveal ? interpolate(frame, [10, 22], [0, 1], clamp) : 0;
   const { fps } = useVideoConfig();
   const total = lines.reduce((s, l) => s + l.value, 0);
   const lineAt = (i: number) => 14 + i * 9;
