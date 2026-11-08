@@ -2,6 +2,8 @@ import "./index.css";
 import React from "react";
 import { Composition, staticFile, type CalculateMetadataFunction } from "remotion";
 import { FORMAT, seconds } from "./lib/format";
+import { LaosStyle, LAOS_STYLE_FRAMES } from "./compositions/LaosVisa/LaosStyle";
+import { LaosVisa, type LaosVisaProps, type Timeline as LaosTimeline } from "./compositions/LaosVisa/LaosVisa";
 import { KineticText } from "./compositions/KineticText/KineticText";
 import { CaptionedVideo } from "./compositions/CaptionedVideo/CaptionedVideo";
 import { PixiScene } from "./compositions/PixiScene/PixiScene";
@@ -119,6 +121,14 @@ const loadDogWalkVo: CalculateMetadataFunction<DogWalkProps> = async ({ props })
 };
 
 /** DogWalkRitchie: закадр рассказчика из vo.json (`python scripts/dogwalk-vo.py DogWalkRitchie`). */
+/** LaosVisa: таймлайн и длина — из `python scripts/laos-build.py`. */
+const loadLaosTimeline: CalculateMetadataFunction<LaosVisaProps> = async ({ props }) => {
+  const res = await fetch(staticFile("clips/LaosVisa/timeline.json"));
+  if (!res.ok) return { durationInFrames: 60, props };
+  const timeline = (await res.json()) as LaosTimeline;
+  return { durationInFrames: timeline.frames, props: { ...props, timeline } };
+};
+
 const loadRitchieVo: CalculateMetadataFunction<DogWalkRitchieProps> = async ({ props }) => {
   const res = await fetch(staticFile("clips/DogWalkRitchie/vo.json"));
   if (!res.ok) return { props };
@@ -1314,6 +1324,19 @@ const opacity = interpolate(
         height={FORMAT.height}
         defaultProps={{ cut: "VietnamLepotaLong" as const }}
       />
+      {/* «Лаосская виза, или Новые приключения Павлика» — длинный горизонтальный ролик для @Tropinkin_travel.
+          LaosStyle — доска стиля (9 приёмов по 4 c), сценарий: me/laos_journey_2/script.md. */}
+      <Composition
+        id="LaosVisa"
+        component={LaosVisa}
+        durationInFrames={60}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ timeline: null } as LaosVisaProps}
+        calculateMetadata={loadLaosTimeline}
+      />
+      <Composition id="LaosStyle" component={LaosStyle} durationInFrames={LAOS_STYLE_FRAMES} fps={30} width={1920} height={1080} />
     </>
   );
 };

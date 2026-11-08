@@ -1,3 +1,6 @@
+/** Ориентация стока: portrait (шортсы, по умолчанию) или landscape — `STOCK_ORIENTATION=landscape npm run assets ...`. */
+const ORIENT = process.env.STOCK_ORIENTATION === "landscape" ? "landscape" : "portrait";
+
 /**
  * Провайдеры бесплатного стока для наполнения роликов ассетами.
  * Запускается в Node (через tsx), НЕ в браузере/композиции. Ключи — из .env.
@@ -38,7 +41,7 @@ async function unsplashPhotos(query: string, count: number): Promise<StockItem[]
   if (!key) return [];
   const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
     query,
-  )}&per_page=${count}&orientation=portrait`;
+  )}&per_page=${count}&orientation=${ORIENT}`;
   const res = await fetch(url, { headers: { Authorization: `Client-ID ${key}` } });
   if (!res.ok) throw new Error(`Unsplash HTTP ${res.status}`);
   const data = (await res.json()) as Json;
@@ -64,7 +67,7 @@ async function pexelsPhotos(query: string, count: number): Promise<StockItem[]> 
   if (!key) return [];
   const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(
     query,
-  )}&per_page=${count}&orientation=portrait`;
+  )}&per_page=${count}&orientation=${ORIENT}`;
   const res = await fetch(url, { headers: { Authorization: key } });
   if (!res.ok) throw new Error(`Pexels HTTP ${res.status}`);
   const data = (await res.json()) as Json;
@@ -89,7 +92,7 @@ async function pexelsVideos(query: string, count: number): Promise<StockItem[]> 
   if (!key) return [];
   const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(
     query,
-  )}&per_page=${count}&orientation=portrait`;
+  )}&per_page=${count}&orientation=${ORIENT}`;
   const res = await fetch(url, { headers: { Authorization: key } });
   if (!res.ok) throw new Error(`Pexels Video HTTP ${res.status}`);
   const data = (await res.json()) as Json;
@@ -99,7 +102,7 @@ async function pexelsVideos(query: string, count: number): Promise<StockItem[]> 
       .filter((f: Json) => f.file_type === "video/mp4")
       .sort((a: Json, b: Json) => (a.width ?? 0) - (b.width ?? 0));
     const pick =
-      files.filter((f: Json) => (f.width ?? 0) <= 1080).pop() ?? files[0];
+      files.filter((f: Json) => (f.width ?? 0) <= (ORIENT === "landscape" ? 1920 : 1080)).pop() ?? files[0];
     return {
       source: "pexels",
       kind: "video",
@@ -121,7 +124,7 @@ async function pixabayPhotos(query: string, count: number): Promise<StockItem[]>
   if (!key) return [];
   const url = `https://pixabay.com/api/?key=${key}&q=${encodeURIComponent(
     query,
-  )}&per_page=${Math.max(count, 3)}&image_type=photo&orientation=vertical`;
+  )}&per_page=${Math.max(count, 3)}&image_type=photo&orientation=${ORIENT === "landscape" ? "horizontal" : "vertical"}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Pixabay HTTP ${res.status}`);
   const data = (await res.json()) as Json;
