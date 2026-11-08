@@ -349,20 +349,27 @@ async function main() {
   const select = bounds
     .map((b) => `between(n\\,${b.at - around}\\,${b.at + around - 1})`)
     .join("+");
-  const sheet = path.join(outDir, "joins.png");
-  await run("ffmpeg", [
-    "-v", "error", "-y",
-    "-i", file,
-    "-vf", `select='${select}',scale=200:-1,tile=${around * 2}x${bounds.length}`,
-    "-frames:v", "1", "-update", "1",
-    sheet,
-  ]);
+  // Ролик из одного бита (открывашка одной сценой, OfficeRiddles) стыков не
+  // имеет: `tile=8x0` ffmpeg не разбирает, и скрипт падал, не дойдя до
+  // проверки склеек внутри бита — ради которой его тут и запускают.
+  if (bounds.length > 0) {
+    const sheet = path.join(outDir, "joins.png");
+    await run("ffmpeg", [
+      "-v", "error", "-y",
+      "-i", file,
+      "-vf", `select='${select}',scale=200:-1,tile=${around * 2}x${bounds.length}`,
+      "-frames:v", "1", "-update", "1",
+      sheet,
+    ]);
 
-  console.log("\nЛист стыков (строка = стык, слева конец бита, справа начало следующего):");
-  bounds.forEach((b, i) => {
-    console.log(`  строка ${i + 1}: ${b.from} → ${b.to}, кадр ${b.at} (${(b.at / fps).toFixed(2)} c)`);
-  });
-  console.log(`  ${sheet}`);
+    console.log("\nЛист стыков (строка = стык, слева конец бита, справа начало следующего):");
+    bounds.forEach((b, i) => {
+      console.log(`  строка ${i + 1}: ${b.from} → ${b.to}, кадр ${b.at} (${(b.at / fps).toFixed(2)} c)`);
+    });
+    console.log(`  ${sheet}`);
+  } else {
+    console.log("\nБит один — стыков между битами нет, проверяются склейки внутри него.");
+  }
 
   // Звук на стыках. Remotion на границе <Sequence> терял 20–50 мс звука
   // клипов — на слух провал, на непрерывной музыке щелчок; заметил заказчик,

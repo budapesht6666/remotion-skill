@@ -384,3 +384,26 @@ Music: "Sneaky Snitch" by Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 ```
+
+
+## kurta-music.mp3 — используется в композиции `OfficeKurta`
+
+- **Трек:** «Desert City»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Desert%20City.mp3
+
+Восточный колорит под открывашку про Дивали. Выбран замером полос: разрыв
+низ/речь 13.5 дБ — лучший из девяти замеренных кандидатов, голос закадрового
+перевода остаётся чистым. Громкость 0.07, к панчу 0.14.
+
+```
+Music: "Desert City" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## scrum-music.mp3 — также в композиции `OfficeRiddles`
+
+«Thief in the Night» (Kevin MacLeod, CC BY 4.0) — крадущийся джаз под дуэль
+загадок. Атрибуция та же, что у `ValleyScrum`.

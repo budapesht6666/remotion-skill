@@ -28,6 +28,9 @@ import { FPS as MIDDLE_FPS } from "./compositions/ValleyMiddleOut/script";
 import { FPS as CODE_FPS } from "./compositions/ValleyCode/script";
 import { FPS as OFFICE_FPS } from "./compositions/OfficeMufasa/script";
 import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
+import { FPS as RIDDLES_FPS } from "./compositions/OfficeRiddles/script";
+import { FPS as KURTA_FPS } from "./compositions/OfficeKurta/script";
+import { FPS as DIWALI_FPS } from "./compositions/OfficeDiwaliSong/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -877,6 +880,132 @@ const opacity = interpolate(
           musicFile: "fish-music.mp3",
           musicVolume: 0.08,
           musicPeakVolume: 0.15,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Загадки» — холодная открывашка «Офиса» s03e05: Дуайт проверяет Райана
+          загадками и проигрывает все четыре. Один бит, склейки ведёт ручной `pan`.
+          Сборка: `npm run cut -- OfficeRiddles`. */}
+      <Composition
+        id="OfficeRiddles"
+        component={ValleyAuction}
+        durationInFrames={Math.round(37 * RIDDLES_FPS)}
+        fps={RIDDLES_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/OfficeRiddles/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс.
+          audioFile: "clips/OfficeRiddles/audio.m4a",
+          accent: "#ffd23f",
+          showCaptions: true,
+          videoScale: 1,
+          // Клип приезжает ровно 1080x1920, сдвиг открыл бы чёрную полосу.
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // «Thief in the Night» (Kevin MacLeod) — крадущийся джаз под дуэль
+          // загадок; разрыв низ/речь 12.9 дБ, лучший из замеренных.
+          musicFile: "scrum-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Курта» — холодная открывашка «Офиса» s03e06: «Классное платье, Райан»,
+          «индусский Хэллоуин» и «А почему ты мне не принесла?».
+          Сборка: `npm run cut -- OfficeKurta`. */}
+      <Composition
+        id="OfficeKurta"
+        component={ValleyAuction}
+        durationInFrames={Math.round(50 * KURTA_FPS)}
+        fps={KURTA_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/OfficeKurta/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс.
+          audioFile: "clips/OfficeKurta/audio.m4a",
+          accent: "#ff8a3d",
+          showCaptions: true,
+          videoScale: 1,
+          // Клип приезжает ровно 1080x1920, сдвиг открыл бы чёрную полосу.
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // «Desert City» (Kevin MacLeod) — восточный колорит под праздник,
+          // разрыв низ/речь 13.5 дБ, лучший из замеренных. Под монологом Майкла
+          // 27 c одним планом подложка держит паузы.
+          musicFile: "kurta-music.mp3",
+          musicVolume: 0.07,
+          musicPeakVolume: 0.14,
+        }}
+        calculateMetadata={async ({ props }) => {
+          const res = await fetch(staticFile(props.clipsFile));
+          if (!res.ok) {
+            return { durationInFrames: seconds(1), props };
+          }
+          const clips = (await res.json()) as ValleyClip[];
+          const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+          return {
+            durationInFrames: Math.max(total + props.outroFrames, 1),
+            props: { ...props, clips },
+          };
+        }}
+      />
+
+      {/* «Песня про Дивали» — финальный тег «Офиса» s03e06, одним планом: Майкл
+          поёт, Дуайт на гитаре, зал ликует. Самая популярная сцена серии (1.13 млн).
+          Сборка: `npm run cut -- OfficeDiwaliSong`. */}
+      <Composition
+        id="OfficeDiwaliSong"
+        component={ValleyAuction}
+        durationInFrames={Math.round(79 * DIWALI_FPS)}
+        fps={DIWALI_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/OfficeDiwaliSong/clips.json",
+          // Звук одной дорожкой: на стыках <Sequence> Remotion теряет 20–50 мс.
+          audioFile: "clips/OfficeDiwaliSong/audio.m4a",
+          accent: "#ffb000",
+          showCaptions: true,
+          videoScale: 1,
+          // Клип приезжает ровно 1080x1920, сдвиг открыл бы чёрную полосу.
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // Без музыки: у сцены своя гитара.
+          musicFile: "",
+          musicVolume: 0,
+          musicPeakVolume: 0,
         }}
         calculateMetadata={async ({ props }) => {
           const res = await fetch(staticFile(props.clipsFile));
