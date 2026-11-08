@@ -307,14 +307,14 @@ export const DogWalkRitchie: React.FC<DogWalkRitchieProps> = ({ vo }) => {
         <Audio src={clip("live.wav")} />
       </Sequence>
       <Sequence durationInFrames={START.rewind} name="music-hook">
-        <Audio src={clip("sfx/tapestop.wav")} volume={MUSIC.base} />
+        <Audio src={clip("sfx/tapestop.wav")} volume={() => MUSIC.base} />
       </Sequence>
       <Sequence from={musicStart} durationInFrames={TOTAL_FRAMES - musicStart} name="music">
         <Audio src={clip("sfx/music.wav")} volume={(f) => musicVolume(f, musicStart, voice)} />
       </Sequence>
       {sfx.map((s, i) => (
         <Sequence key={`fx${i}`} from={frameOf(s)} durationInFrames={secs(s.dur ?? 2)} name={`sfx: ${s.name}`}>
-          <Audio src={clip(`sfx/${s.name}.wav`)} volume={s.volume ?? 1} />
+          <Audio src={clip(`sfx/${s.name}.wav`)} volume={() => s.volume ?? 1} />
         </Sequence>
       ))}
       {vo.map((p, i) => (

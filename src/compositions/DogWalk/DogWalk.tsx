@@ -763,7 +763,7 @@ export const DogWalk: React.FC<DogWalkProps> = ({ vo }) => {
         <Audio src={clip("live.wav")} />
       </Sequence>
       <Sequence durationInFrames={START.rewind} name="music-hook">
-        <Audio src={clip("sfx/tapestop.wav")} volume={MUSIC.base} />
+        <Audio src={clip("sfx/tapestop.wav")} volume={() => MUSIC.base} />
       </Sequence>
       <Sequence from={musicStart} durationInFrames={TOTAL_FRAMES - musicStart} name="music">
         <Audio src={clip("sfx/music.wav")} volume={(f) => musicVolume(f, musicStart, voiceWindows)} />
@@ -774,7 +774,7 @@ export const DogWalk: React.FC<DogWalkProps> = ({ vo }) => {
         const underVo = vo.some((p) => f >= frameOf(p) - 3 && f < frameOf(p) + secs(p.dur));
         return (
           <Sequence key={`fx${i}`} from={f} durationInFrames={secs(s.dur ?? 3)} name={`sfx: ${s.name}`}>
-            <Audio src={clip(`sfx/${s.name}.wav`)} volume={(s.volume ?? 1) * (underVo ? 0.55 : 1)} />
+            <Audio src={clip(`sfx/${s.name}.wav`)} volume={() => (s.volume ?? 1) * (underVo ? 0.55 : 1)} />
           </Sequence>
         );
       })}
