@@ -4,11 +4,25 @@ import { BRAND, EASE_OUT, PRODUCT, RADIUS, TRACKING, TYPE, WEIGHT } from "../bra
 import { BRAND_FONT } from "../fonts";
 import { Display, Eyebrow } from "./LightScenes";
 
-/** Знак diverBot: две линии, расходящиеся из одной точки, — это и есть дивергенция. */
+/**
+ * Знак diverBot — «dB на монете», выбран 22.10.2026. Контуры дословно из
+ * `diverBot/promo/public/favicon.svg`: тот же знак стоит аватаром бота,
+ * страницы в Facebook и на сайте, и ролик, ведущий туда, обязан совпадать.
+ * (До этого здесь был уголок из двух расходящихся линий — прежний знак.)
+ */
 export const Mark: React.FC<{ size: number; color?: string }> = ({ size, color = BRAND.ink }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
-    <path d="M4.5 12 20 4.5" stroke={color} strokeWidth={2.6} strokeLinecap="round" />
-    <path d="M4.5 12 20 19.5" stroke={color} strokeWidth={2.6} strokeLinecap="round" />
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color}>
+    <circle cx="12" cy="12" r="11" fill={BRAND.paper} strokeWidth="2" />
+    <circle cx="12" cy="12" r="8.7" strokeWidth="1" strokeDasharray="1 1.5" />
+    <g
+      transform="translate(12 12) scale(0.72) translate(-11.125 -12)"
+      strokeWidth="1.667"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.6V20.4M12 6.6H14.9a2.55 2.55 0 0 1 0 5.1H12M12 11.7H15.4a2.85 2.85 0 0 1 0 5.7H12M14.4 3.6V6.6M14.4 17.4V20.4" />
+      <circle cx="8" cy="13.4" r="4" />
+    </g>
   </svg>
 );
 
@@ -209,7 +223,11 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
     >
       <div style={{ width: 900, display: "flex", flexDirection: "column", gap: 24 }}>
         <Eyebrow>Pricing</Eyebrow>
-        <Display lines={["Only the alert is paid.", "Everything else is open."]} size={58} />
+        {/* Заголовок секции цен сайта с 21.10.2026: платными стали не только
+            уведомления, но и пять инструментов и «Аналитика», а лента BTC и
+            ETH осталась открытой. Прежнее «Only the alert is paid» больше
+            неправда. */}
+        <Display lines={["Pay for alerts and analytics.", "The BTC and ETH feed is open."]} size={56} />
       </div>
 
       <div
@@ -270,16 +288,18 @@ export const OfferScene: React.FC<{ highlightFrom: number | null }> = ({ highlig
               color: BRAND.ink,
             }}
           >
-            First {PRODUCT.trialDays} days free, once per person
+            First {PRODUCT.trialHours} hours free, once per person
           </span>
         </div>
 
         <div style={{ height: 1, backgroundColor: BRAND.border, margin: "34px 0 28px" }} />
 
         {[
+          // Строки — из списка «included» секции цен сайта (promo/src/i18n/en.ts),
+          // сокращённые под ширину карточки.
           "Alerts the moment an event fires",
-          "All nine event types, all four timeframes",
-          "BTC and ETH, analysed independently",
+          `Signals on all ${PRODUCT.instruments} instruments`,
+          "The Analytics page and its alerts",
         ].map((row, i) => {
           const t = interpolate(frame, [10 + i * 6, 26 + i * 6], [0, 1], {
             extrapolateLeft: "clamp",
@@ -393,7 +413,7 @@ export const EndCard: React.FC = () => {
           opacity: mark,
         }}
       >
-        Bybit · BTC &amp; ETH
+        Bybit · {PRODUCT.instruments} instruments
       </div>
 
       <div

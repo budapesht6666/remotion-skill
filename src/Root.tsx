@@ -1369,6 +1369,41 @@ const opacity = interpolate(
         calculateMetadata={loadAd}
       />
 
+      {/*
+        Третий монтаж — под Reels и рекламу в Meta (09.11.2026). Монтаж как у
+        `DiverBotAdCut`, но факты нынешнего продукта: семь инструментов, демо
+        на сутки, без суммы в голосе. Разбор — в `DiverBotReel/script.ts`.
+        Субтитры идут на всех репликах: прятать на оффере больше нечего, цены
+        в голосе нет.
+      */}
+      <Composition
+        id="DiverBotReel"
+        component={DiverBotAd}
+        durationInFrames={seconds(5)}
+        fps={FORMAT.fps}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        schema={diverBotAdSchema}
+        defaultProps={{
+          adFile: "vo/DiverBotReel/ad.json",
+          musicDark: "diverbot-dark.mp3",
+          musicLight: "diverbot-light.mp3",
+          musicDarkVolume: 0.16,
+          musicLightVolume: 0.11,
+          alertVolume: 0.5,
+          dropVolume: 0.35,
+          tickVolume: 0.28,
+          showCaptions: true,
+          captionsOffFor: [],
+          hookLines: ["This candle printed", "while you slept."],
+          hookFrames: 72,
+          narrationFile: "",
+          phrases: [],
+          shots: [],
+        }}
+        calculateMetadata={loadAd}
+      />
+
       {/* Шортс по своей игре Space Flight: геймплей, снятый самой игрой на 60 к/с,
           монтаж в такт её музыке, панчи на ударах из лога событий. Сборка:
           `npm run gamecut -- SpaceFlightShort` → public/clips/SpaceFlightShort/
