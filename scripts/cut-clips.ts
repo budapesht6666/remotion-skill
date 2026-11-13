@@ -87,7 +87,8 @@ export type Beat = {
    * `x` — доля ширины исходника в центре, `width` — какая доля ширины видна.
    * `push` — медленный наезд за бит (0.06 = +6 % к концу): нужен на запертой
    * камере, иначе статичный план в ленте читается как зависшее видео.
-   * Трекер и `pan` для такого бита не нужны.
+   * Трекер не нужен. `pan` (центр полосы в долях ширины) — если планы внутри
+   * бита требуют разных центров: Моника крупно и двойной план (ValleyHippo).
    */
   view?: { x: number; width: number; push?: number };
   /**
@@ -381,6 +382,16 @@ async function main() {
     const stageHeight = Math.round((FORMAT.height * zoom) / 2) * 2;
     const stageWidth = Math.round((srcWidth * stageHeight) / srcHeight / 2) * 2;
     const points = beat.pan ?? tracks[beat.id]?.pan ?? [];
+    // Несортированная траектория молча ломает переброс окна: на ValleyRude
+    // дописанные в хвост точки встали после последней точки трека, и ступенька
+    // сработала на кадр позже — заметно только по кадрам клипа.
+    for (let i = 1; i < points.length; i++) {
+      if (points[i].t < points[i - 1].t) {
+        throw new Error(
+          `Бит ${beat.id}: точки pan не по порядку (t=${points[i - 1].t} → ${points[i].t})`,
+        );
+      }
+    }
     const xExpr = panExpression(points, stageWidth, FORMAT.width, fps);
 
     // Цензура: область исходного кадра замазывается ДО масштабирования —
@@ -420,7 +431,12 @@ async function main() {
       // чем у обычного окна (0.6 ширины → ×2.6 против ×4.8), поэтому денойз
       // и резкость те же, а пикселей не видно.
       const viewW = Math.round((beat.view.width * srcWidth) / 2) * 2;
-      const viewX = Math.max(0, Math.min(srcWidth - viewW, Math.round(beat.view.x * srcWidth - viewW / 2)));
+      // С `pan` полоса ведётся по траектории (центр в долях ширины), как обычное
+      // окно: на ValleyHippo Моника крупно (0.37) и диван (0.61) делили один
+      // центр, и Моника стояла у края, а в полосу лез человек за стеклом.
+      const viewX = beat.pan
+        ? `'${panExpression(beat.pan, srcWidth, viewW, fps)}'`
+        : String(Math.max(0, Math.min(srcWidth - viewW, Math.round(beat.view.x * srcWidth - viewW / 2))));
       const fgH = Math.round((srcHeight * FORMAT.width) / viewW / 2) * 2;
       const pre = ["hqdn3d=1.5:1.2:6:6", ...(blurChain ? [blurChain] : [])].join(",");
       // Наезд: zoompan по кадрам (d=1 — кадр в кадр), центр держится, зум
@@ -500,7 +516,14 @@ async function main() {
     // поэтому слова берутся из индекса реплик и сдвигаются к началу клипа.
     const fromSource =
       beat.subs === "source"
-        ? sourceWords(await loadQuotes(film.slug), beat.start, beat.start + srcDuration, slow)
+        ? // Слова хвоста `audioTail` тоже в субтитр: композиция договаривает их
+          // под стоп-кадром концовки (ValleyBalls — панч звучит за склейкой).
+          sourceWords(
+            await loadQuotes(film.slug),
+            beat.start,
+            beat.start + srcDuration + (beat.audioTail ?? 0),
+            slow,
+          )
         : [];
     const words = vo?.words ?? fromSource;
 

@@ -16,7 +16,11 @@ import { PhysicsScene } from "./compositions/PhysicsScene/PhysicsScene";
 import { ShellEject } from "./compositions/ShellEject/ShellEject";
 import { TunnelRush } from "./compositions/TunnelRush/TunnelRush";
 import { JuniorKumite, type Clip } from "./compositions/JuniorKumite/JuniorKumite";
-import { ValleyAuction, type Clip as ValleyClip } from "./compositions/ValleyAuction/ValleyAuction";
+import {
+  ValleyAuction,
+  type Clip as ValleyClip,
+  type ValleyAuctionProps,
+} from "./compositions/ValleyAuction/ValleyAuction";
 import { FPS as VALLEY_FPS } from "./compositions/ValleyAuction/script";
 import { FPS as ASSHOLE_FPS } from "./compositions/ValleyAsshole/script";
 import { FPS as CICADAS_FPS } from "./compositions/ValleyCicadas/script";
@@ -31,6 +35,13 @@ import { FPS as PENCIL_FPS } from "./compositions/OfficePencil/script";
 import { FPS as RIDDLES_FPS } from "./compositions/OfficeRiddles/script";
 import { FPS as KURTA_FPS } from "./compositions/OfficeKurta/script";
 import { FPS as DIWALI_FPS } from "./compositions/OfficeDiwaliSong/script";
+import { FPS as RUDE_FPS } from "./compositions/ValleyRude/script";
+import { FPS as HIPPO_FPS } from "./compositions/ValleyHippo/script";
+import { FPS as LAURIE_FPS } from "./compositions/ValleyLaurie/script";
+import { FPS as REVENUE_FPS } from "./compositions/ValleyRevenue/script";
+import { FPS as BRO_FPS } from "./compositions/ValleyBro/script";
+import { FPS as BALLS_FPS } from "./compositions/ValleyBalls/script";
+import { FPS as RUSS_FPS } from "./compositions/ValleyRuss/script";
 import {
   BeekeeperKong,
   TITLE_CARD_FRAMES,
@@ -114,6 +125,24 @@ const loadAd: CalculateMetadataFunction<DiverBotAdSchema> = async ({ props }) =>
       phrases: manifest.phrases,
       shots: manifest.shots,
     },
+  };
+};
+
+/**
+ * Нарезки сериалов на компоненте ValleyAuction: клипы и длина — из clips.json,
+ * который пишет `npm run cut`. Длина = сумма клипов + хвост концовки.
+ */
+const loadValleyClips: CalculateMetadataFunction<ValleyAuctionProps> = async ({ props }) => {
+  const res = await fetch(staticFile(props.clipsFile));
+  if (!res.ok) {
+    // Клипы ещё не нарезаны — композиция обязана открываться в студии.
+    return { durationInFrames: seconds(1), props };
+  }
+  const clips = (await res.json()) as ValleyClip[];
+  const total = clips.reduce((sum, c) => sum + c.durationInFrames, 0);
+  return {
+    durationInFrames: Math.max(total + props.outroFrames, 1),
+    props: { ...props, clips },
   };
 };
 
@@ -1019,6 +1048,201 @@ const opacity = interpolate(
             props: { ...props, clips },
           };
         }}
+      />
+
+      {/* «Хамство как стратегия» — «Кремниевая долина» s02e01: Эрлих хамит
+          фондам (картина, рубашка, кексики), и Pied Piper оценивают в 75 млн.
+          Сборка: `npm run track -- ValleyRude` → `npm run cut -- ValleyRude`. */}
+      <Composition
+        id="ValleyRude"
+        component={ValleyAuction}
+        durationInFrames={Math.round(70 * RUDE_FPS)}
+        fps={RUDE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyRude/clips.json",
+          audioFile: "clips/ValleyRude/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "rude-music.mp3",
+          musicVolume: 0.04,
+          musicPeakVolume: 0.08,
+        }}
+        calculateMetadata={loadValleyClips}
+      />
+
+      {/* «Бегемот» — «Кремниевая долина» s02e01: Моника рассказывает, как умер
+          Питер Грегори (сафари, бегемот, выстрел мимо — «он не бегал очень
+          давно»). Вся сцена режимом `view`: двойной план в окно 0.32 не влезает.
+          Сборка: `npm run cut -- ValleyHippo`. */}
+      <Composition
+        id="ValleyHippo"
+        component={ValleyAuction}
+        durationInFrames={Math.round(71 * HIPPO_FPS)}
+        fps={HIPPO_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyHippo/clips.json",
+          audioFile: "clips/ValleyHippo/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          // Кончается полосой `view` — кнопка в размытом поле сверху, не на лицах.
+          subscribeCenterY: 0.14,
+          musicFile: "hippo-music.mp3",
+          musicVolume: 0.06,
+          musicPeakVolume: 0.12,
+        }}
+        calculateMetadata={loadValleyClips}
+      />
+
+      {/* «Питер Грегори мёртв» — «Кремниевая долина» s02e01: Лори Брим не умеет
+          общаться с людьми и трижды сообщает Монике новость, которую та знает.
+          Сборка: `npm run track -- ValleyLaurie` → `npm run cut -- ValleyLaurie`. */}
+      <Composition
+        id="ValleyLaurie"
+        component={ValleyAuction}
+        durationInFrames={Math.round(66 * LAURIE_FPS)}
+        fps={LAURIE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyLaurie/clips.json",
+          audioFile: "clips/ValleyLaurie/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "laurie-music.mp3",
+          musicVolume: 0.06,
+          musicPeakVolume: 0.12,
+        }}
+        calculateMetadata={loadValleyClips}
+      />
+
+      {/* «Прибыль никому не нужна» — «Кремниевая долина» s02e03: Расс Ханнеман
+          объясняет, почему прибыль вредна, и «ОРВИ» — Радио В Интернет.
+          Сборка: `npm run track -- ValleyRevenue` → `npm run cut -- ValleyRevenue`. */}
+      <Composition
+        id="ValleyRevenue"
+        component={ValleyAuction}
+        durationInFrames={Math.round(73 * REVENUE_FPS)}
+        fps={REVENUE_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyRevenue/clips.json",
+          audioFile: "clips/ValleyRevenue/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "revenue-music.mp3",
+          musicVolume: 0.055,
+          musicPeakVolume: 0.11,
+        }}
+        calculateMetadata={loadValleyClips}
+      />
+
+      {/* «Клёвый брат» — «Кремниевая долина» s02e02: Динеш «всегда был клёвым братом»,
+          Гилфойл выясняет, в чём это выражалось.
+          Сборка: `npm run track -- ValleyBro` → `npm run cut -- ValleyBro`. */}
+      <Composition
+        id="ValleyBro"
+        component={ValleyAuction}
+        durationInFrames={Math.round(73 * BRO_FPS)}
+        fps={BRO_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyBro/clips.json",
+          audioFile: "clips/ValleyBro/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "bro-music.mp3",
+          musicVolume: 0.1,
+          musicPeakVolume: 0.2,
+        }}
+        calculateMetadata={loadValleyClips}
+      />
+
+      {/* «Моя очередь» — «Кремниевая долина» s02e02: инвестор дослушивает извинения
+          Эрлиха и отвечает тем же, что тот сделал у него на столе.
+          Сборка: `npm run track -- ValleyBalls` → `npm run cut -- ValleyBalls`. */}
+      <Composition
+        id="ValleyBalls"
+        component={ValleyAuction}
+        durationInFrames={Math.round(57 * BALLS_FPS)}
+        fps={BALLS_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyBalls/clips.json",
+          audioFile: "clips/ValleyBalls/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          // Хвост на 3 c: панч «Пожалуйста, не надо» звучит под стоп-кадром (audioTail).
+          outroFrames: 72,
+          subscribeLabel: "SUBSCRIBE",
+          // Кончается полосой `view` — кнопка в размытом поле сверху, не на лицах.
+          subscribeCenterY: 0.14,
+          musicFile: "balls-music.mp3",
+          musicVolume: 0.05,
+          musicPeakVolume: 0.1,
+        }}
+        calculateMetadata={loadValleyClips}
+      />
+
+      {/* «Вся ебля его» — «Кремниевая долина» s02e03: Расс Ханнеман вваливается к
+          ребятам, чек-«декорация» и ответ Эрлиха в финале.
+          Сборка: `npm run track -- ValleyRuss` → `npm run cut -- ValleyRuss`. */}
+      <Composition
+        id="ValleyRuss"
+        component={ValleyAuction}
+        durationInFrames={Math.round(75 * RUSS_FPS)}
+        fps={RUSS_FPS}
+        width={FORMAT.width}
+        height={FORMAT.height}
+        defaultProps={{
+          clips: [] as ValleyClip[],
+          clipsFile: "clips/ValleyRuss/clips.json",
+          audioFile: "clips/ValleyRuss/audio.m4a",
+          accent: "#38e07b",
+          showCaptions: true,
+          videoScale: 1,
+          videoShiftY: 0,
+          outroFrames: 60,
+          subscribeLabel: "SUBSCRIBE",
+          musicFile: "russ-music.mp3",
+          musicVolume: 0.055,
+          musicPeakVolume: 0.11,
+        }}
+        calculateMetadata={loadValleyClips}
       />
 
       {/* «Пчеловод 3: Опекунство» — смешной перевод на кадрах ДВУХ фильмов

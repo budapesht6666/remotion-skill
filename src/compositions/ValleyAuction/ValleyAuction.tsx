@@ -75,6 +75,12 @@ export type ValleyAuctionProps = {
   /** Подпись на кнопке концовки. */
   subscribeLabel: string;
   /**
+   * Высота кнопки Subscribe в долях кадра (по умолчанию 0.45). Ролики, которые
+   * кончаются режимом `view` (полоса кадра поверх размытой копии), поднимают её
+   * в размытое поле сверху (0.14), иначе кнопка закрывает лица в полосе.
+   */
+  subscribeCenterY?: number;
+  /**
    * Фоновая музыка под оригинальной дорожкой. Пустая строка — без музыки
    * (у первых двух нарезок «Долины» её и нет). Путь в public/, не null:
    * `null` в defaultProps гасит редактор пропсов в студии.
@@ -206,6 +212,35 @@ const Caption: React.FC<{ chunk: Chunk; accent: string; time: number }> = ({
   );
 };
 
+/**
+ * Субтитр под стоп-кадром концовки: слова последнего клипа, которые звучат
+ * уже после его конца (`audioTail`, ValleyBalls). Время считается от начала
+ * последнего клипа, поэтому плашка, начатая в клипе, продолжается без шва.
+ */
+const OutroCaptions: React.FC<{ clip: Clip; accent: string; outroFrames: number }> = ({
+  clip,
+  accent,
+  outroFrames,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const clipSeconds = clip.durationInFrames / fps;
+  const time = clipSeconds + frame / fps;
+  const chunks = React.useMemo(
+    () => buildChunks(clip.words, clipSeconds + outroFrames / fps),
+    [clip.words, clipSeconds, outroFrames, fps],
+  );
+  const chunk = chunks.find((c) => time >= c.from && time < c.to);
+  if (!chunk) return null;
+  return (
+    <AbsoluteFill
+      style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 400, paddingLeft: 60, paddingRight: 60 }}
+    >
+      <Caption chunk={chunk} accent={accent} time={time} />
+    </AbsoluteFill>
+  );
+};
+
 const ClipShot: React.FC<{
   clip: Clip;
   accent: string;
@@ -319,6 +354,7 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
   videoShiftY,
   outroFrames,
   subscribeLabel,
+  subscribeCenterY,
   musicFile,
   musicVolume,
   musicPeakVolume,
@@ -391,13 +427,16 @@ export const ValleyAuction: React.FC<ValleyAuctionProps> = ({
           durationInFrames={outroFrames}
           name="outro"
         >
-          <SubscribeOutro label={subscribeLabel}>
+          <SubscribeOutro label={subscribeLabel} centerY={subscribeCenterY}>
             <FrozenLastFrame
               clip={lastClip}
               videoScale={videoScale}
               videoShiftY={videoShiftY}
             />
           </SubscribeOutro>
+          {showCaptions ? (
+            <OutroCaptions clip={lastClip} accent={accent} outroFrames={outroFrames} />
+          ) : null}
         </Sequence>
       ) : null}
     </AbsoluteFill>

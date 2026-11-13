@@ -407,3 +407,108 @@ https://creativecommons.org/licenses/by/4.0/
 
 «Thief in the Night» (Kevin MacLeod, CC BY 4.0) — крадущийся джаз под дуэль
 загадок. Атрибуция та же, что у `ValleyScrum`.
+
+## rude-music.mp3 — используется в композиции `ValleyRude`
+
+- **Трек:** «Werq»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Werq.mp3
+
+Дерзкий фанк под Эрлиха, который хамит фондам. Разрыв низ/речь 8.6 дБ. Трек громкий (−12.3 LUFS против −18.3 у «Thief in the Night»), поэтому громкость 0.04 → 0.08 к панчу.
+
+```
+Music: "Werq" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## hippo-music.mp3 — используется в композиции `ValleyHippo`
+
+- **Трек:** «Spy Glass»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Spy%20Glass.mp3
+
+Крадущийся детектив под рассказ Моники о гибели Питера Грегори: держит напряжение долгих пауз, не комментируя их. Разрыв низ/речь 11.3 дБ — лучший из десяти замеренных.
+
+```
+Music: "Spy Glass" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## laurie-music.mp3 — используется в композиции `ValleyLaurie`
+
+- **Трек:** «Lobby Time»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Lobby%20Time.mp3
+
+Музыка из лифта под Лори Брим, которая не умеет говорить с людьми: корпоративная пустота как шутка. Разрыв низ/речь 7.7 дБ.
+
+```
+Music: "Lobby Time" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## revenue-music.mp3 — используется в композиции `ValleyRevenue`
+
+- **Трек:** «Hep Cats»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Hep%20Cats.mp3
+
+Свинг под понты Расса Ханнемана. Разрыв низ/речь 7.2 дБ.
+
+```
+Music: "Hep Cats" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## bro-music.mp3 — используется в композиции `ValleyBro`
+
+- **Трек:** «Bossa Antigua»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Bossa%20Antigua.mp3
+
+Расслабленная босса-нова под перепалку Динеша и Гилфойла про «клёвого брата». Разрыв низ/речь 8.5 дБ. Трек тихий (−21.5 LUFS), громкость 0.10 → 0.20.
+
+```
+Music: "Bossa Antigua" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## balls-music.mp3 — используется в композиции `ValleyBalls`
+
+- **Трек:** «Covert Affair»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Covert%20Affair.mp3
+
+Шпионское нагнетание под месть инвестора: он дослушивает извинения Эрлиха и встаёт. Разрыв низ/речь 12.1 дБ.
+
+```
+Music: "Covert Affair" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
+
+## russ-music.mp3 — используется в композиции `ValleyRuss`
+
+- **Трек:** «Funkorama»
+- **Автор:** Kevin MacLeod (incompetech.com)
+- **Лицензия:** Creative Commons Attribution 4.0 (CC BY 4.0)
+- **Источник:** https://incompetech.com/music/royalty-free/mp3-royaltyfree/Funkorama.mp3
+
+Наглый фанк под Расса Ханнемана, который вваливается к ребятам. Разрыв низ/речь 9.0 дБ.
+
+```
+Music: "Funkorama" by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+```
